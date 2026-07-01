@@ -1,4 +1,4 @@
-# 10. NuCache vs Hybrid Cache
+# 12. NuCache vs Hybrid Cache
 
 > **Start here.** This chapter kills the single most common confusion in the v17 cache story: the idea that NuCache and Hybrid Cache are two engines you choose between. They are not. You will learn what each name really means, why both still appear all over the source, and why there is nothing left to "stay on" if you wanted the old one.
 
@@ -13,6 +13,8 @@ So if you read the code casually, it can look as if NuCache and Hybrid Cache are
 
 They are not.
 
+> **Both names, one output.** Whichever name you meet in the source, the engine's job is the same: produce the `IPublishedContent` read model ([Chapter 2 - The Published Object](./02-the-published-object.md)). The names describe the machinery, not the object it hands your templates and the Delivery API.
+
 ## The shortest true answer
 
 Old NuCache is the earlier published-content cache architecture.
@@ -26,8 +28,6 @@ In Umbraco 17, the active implementation is Hybrid Cache, but NuCache terminolog
 - SQL template names
 - comments
 - some refresh APIs such as `RefreshAllPublishedSnapshot`
-
-> **Analogy — same sign, new kitchen.** Think of the published-content cache as a restaurant's prep stations, kept stocked from the walk-in fridge (the database) so waiters never wait on the slow store. The sign over the door still says "NuCache", but in Umbraco 15 the whole kitchen behind it was torn out and rebuilt as Hybrid Cache. The lingering `NuCache*` names are just old job titles left painted on a few doors — the people behind them now report to Hybrid Cache.
 
 ## Why the confusion happens
 
@@ -64,7 +64,7 @@ So for the book, the safest beginner phrasing is:
 
 > In Umbraco 17, Hybrid Cache is the active published-content cache implementation. NuCache is mostly the historical name that still survives in compatibility seams.
 
-> **Key term — compatibility seam.** A "seam" here is a spot where an old name lingers after the thing behind it changed: a setting, a comment, an SQL template, or an API still wearing the `NuCache` label while Hybrid Cache does the actual work. The next few sections walk through the seams one by one.
+> **Key term — compatibility seam.** A "seam" here is a spot where an old name lingers after the thing behind it changed: a setting, a comment, an SQL template, or an API that still carries the `NuCache` name while Hybrid Cache does the actual work. The next few sections walk through the seams one by one.
 
 ## The settings seam
 
@@ -242,9 +242,9 @@ So "NuCache is gone" is a statement about v15 and later — not about those olde
 - There is no per-project engine choice. An upgraded site moves onto Hybrid Cache exactly like a brand-new one.
 - The NuCache-named settings still do something real — they tune Hybrid Cache (serialiser, SQL paging) — they just do not keep an old engine alive.
 
-A friendly way to remember it:
+To summarise:
 
-> The NuCache engine retired in v15. Hybrid Cache does the work now — the NuCache name simply kept its old job title on a few doors.
+> The NuCache engine retired in v15. Hybrid Cache does the work now; the NuCache name simply survives on some settings, serialiser options, and SQL template names.
 
 ## Quick comparison table
 
@@ -312,7 +312,7 @@ The practical rule is simple: if the `NuCache` name sits on a setting or SQL tem
 
 ## In a nutshell
 
-In Umbraco 17, NuCache is mainly the old published-cache architecture whose names and settings still survive, while Hybrid Cache is the newer active implementation built on Microsoft's `HybridCache`. The sign over the door never changed; the kitchen behind it did.
+In Umbraco 17, NuCache is mainly the old published-cache architecture whose names and settings still survive, while Hybrid Cache is the newer active implementation built on Microsoft's `HybridCache`. The names never changed; the engine behind them did.
 
 ### Three takeaways
 
@@ -322,9 +322,9 @@ In Umbraco 17, NuCache is mainly the old published-cache architecture whose name
 
 ### Where to go next
 
-- [10. Future Hybrid Cache architecture](./09-future-hybrid-cache-architecture.md) — how the active engine is actually built.
-- [03. Published cache and load balancing](./03-published-cache-and-load-balancing.md) — where this cache sits across multiple servers.
-- [14. Reading the cache code](./13-reading-the-cache-code.md) — for tracing these names through the source yourself.
+- [10. Future Hybrid Cache architecture](./11-future-hybrid-cache-architecture.md) — how the active engine is actually built.
+- [03. Published cache and load balancing](./05-published-cache-and-load-balancing.md) — where this cache sits across multiple servers.
+- [14. Reading the cache code](./15-reading-the-cache-code.md) — for tracing these names through the source yourself.
 
 ## Sources
 
@@ -338,13 +338,13 @@ In Umbraco 17, NuCache is mainly the old published-cache architecture whose name
   - `umbraco-v17/src/Umbraco.Core/Cache/DistributedCacheExtensions.cs`
   - `umbraco-v17/src/Umbraco.Core/Constants-SqlTemplates.cs`
 
-[^12-settings]: See [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout) and specifically [`NuCacheSettings.cs`](https://github.com/umbraco/Umbraco-CMS/blob/release-17.5.0/src/Umbraco.Core/Configuration/Models/NuCacheSettings.cs).
-[^12-serializer]: See [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout) and `NuCacheSerializerType.cs`.
-[^12-builder]: See [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout) and the v17 `Umbraco.PublishedCache.HybridCache/DependencyInjection/UmbracoBuilderExtensions.cs`.
-[^12-sql]: See [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout) and `Constants-SqlTemplates.cs`.
-[^12-snapshot]: See [C7](./14-appendix-sources.md#c7-core-cache-types-and-refreshers) and `DistributedCacheExtensions.cs`.
-[^12-legacy]: See [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout) and `NuCacheSerializerType.cs`.
-[^12-active]: See [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout), [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main), and [M2](./14-appendix-sources.md#m2-aspnet-core-hybridcache).
-[^12-history]: See [B7](./14-appendix-sources.md#b7-umbraco-123-release), [B8](./14-appendix-sources.md#b8-umbraco-product-update---november-2023), [B1](./14-appendix-sources.md#b1-umbraco-15-release), and [B2](./14-appendix-sources.md#b2-umbraco-15-release-candidate).
-[^12-oneengine]: See [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout) and [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main). The v17 source contains a single published-cache project, `Umbraco.PublishedCache.HybridCache`, registered through `AddUmbracoHybridCache()`; there is no NuCache engine project or alternative registration to fall back to, and the old engine types (published-snapshot service, in-memory content store, BTree local cache) are absent.
-[^12-v18-main-audit]: See [C2](./14-appendix-sources.md#c2-umbraco-18-source-checkout), [C3](./14-appendix-sources.md#c3-umbraco-main-branch-source-checkout), [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main), and [C8](./14-appendix-sources.md#c8-v18-and-main-nucache-vocabulary-audit).
+[^12-settings]: See [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout) and specifically [`NuCacheSettings.cs`](https://github.com/umbraco/Umbraco-CMS/blob/release-17.5.0/src/Umbraco.Core/Configuration/Models/NuCacheSettings.cs).
+[^12-serializer]: See [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout) and `NuCacheSerializerType.cs`.
+[^12-builder]: See [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout) and the v17 `Umbraco.PublishedCache.HybridCache/DependencyInjection/UmbracoBuilderExtensions.cs`.
+[^12-sql]: See [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout) and `Constants-SqlTemplates.cs`.
+[^12-snapshot]: See [C7](./16-appendix-sources.md#c7-core-cache-types-and-refreshers) and `DistributedCacheExtensions.cs`.
+[^12-legacy]: See [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout) and `NuCacheSerializerType.cs`.
+[^12-active]: See [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout), [C4](./16-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main), and [M2](./16-appendix-sources.md#m2-aspnet-core-hybridcache).
+[^12-history]: See [B7](./16-appendix-sources.md#b7-umbraco-123-release), [B8](./16-appendix-sources.md#b8-umbraco-product-update---november-2023), [B1](./16-appendix-sources.md#b1-umbraco-15-release), and [B2](./16-appendix-sources.md#b2-umbraco-15-release-candidate).
+[^12-oneengine]: See [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout) and [C4](./16-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main). The v17 source contains a single published-cache project, `Umbraco.PublishedCache.HybridCache`, registered through `AddUmbracoHybridCache()`; there is no NuCache engine project or alternative registration to fall back to, and the old engine types (published-snapshot service, in-memory content store, BTree local cache) are absent.
+[^12-v18-main-audit]: See [C2](./16-appendix-sources.md#c2-umbraco-18-source-checkout), [C3](./16-appendix-sources.md#c3-umbraco-main-branch-source-checkout), [C4](./16-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main), and [C8](./16-appendix-sources.md#c8-v18-and-main-nucache-vocabulary-audit).

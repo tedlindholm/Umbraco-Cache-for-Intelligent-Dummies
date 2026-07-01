@@ -6,28 +6,26 @@ If you only remember one thing from this chapter, make it this:
 
 > "Umbraco cache" is not one single cache. It is a small family of caches with different jobs.
 
-A lot of confusion around Umbraco caching comes from treating it as one thing. Once you see it as a family, the individual members start to make sense.
-
-> **Analogy — the restaurant kitchen.** Picture a busy restaurant on a Friday night. There is a walk-in fridge holding every raw ingredient — that is your *database*. There are prep stations with ingredients already chopped and ready to assemble — that is the *published content cache*. There are finished plates under the heat lamp, ready to carry straight out — that is the *output cache*. And there is a shelf by the front door where takeaway bags wait for customers to grab without ever talking to staff — that is the *browser and proxy cache*. Almost every cache in this book is one of those surfaces, and we will keep coming back to this kitchen.
+A lot of confusion around Umbraco caching comes from treating it as one thing. Once you see it as a family, the individual members start to make sense. Four surfaces cover almost every cache in this book: the **database** is the source of truth but slow to reach; the **published content cache** holds published data ready to assemble; the **output cache** holds finished responses ready to serve; and the **browser and proxy cache** serves responses without the server doing any work at all.
 
 ## The three most important cache stories
 
-### 1. Published content cache — the prep stations
+### 1. Published content cache
 
-This is the kitchen's *mise en place*: content prepped ahead of time so nobody has to sprint to the walk-in fridge in the middle of an order. Every time Umbraco needs to serve a published document, a media item, a domain, or a related published model, it goes through this cache first.
+This cache holds published data prepared ahead of time, so a request rarely has to go all the way to the database. Every time Umbraco needs to serve a published document, a media item, a domain, or a related published model, it goes through this cache first.
 
 - Used when Umbraco loads published documents, media, domains, and related published models
 - In Umbraco 17 it is built on Microsoft's `HybridCache`[^01-hybrid]
-- It also keeps a small in-process "fast lane" cache for already materialised published objects
+- It also keeps a small in-process cache of already materialised published objects
 - This is not the same thing as website output caching
 
 The fast-lane cache is worth knowing about: if the same published object was already resolved earlier in the request, it is handed back immediately from in-process memory without touching `HybridCache` at all.
 
-> **Key term — materialised object.** When Umbraco turns raw cached data into a ready-to-use `IPublishedContent` object, it has *materialised* it. The "fast lane" stores those already-materialised objects, so the next request can skip the assembly step entirely.
+> **Key term — materialised object.** When Umbraco turns raw cached data into a ready-to-use `IPublishedContent` object, it has *materialised* it. The small in-process cache stores those already-materialised objects, so the next request can skip the assembly step entirely.
 
-### 2. Content Delivery API output cache — plates under the heat lamp
+### 2. Content Delivery API output cache
 
-This is the finished plate kept warm and ready to serve: rather than re-cook a response from scratch, Umbraco hands out the JSON it already prepared. If you are running Umbraco as a headless CMS — feeding JSON to a Next.js frontend, a mobile app, or anything else that is not a Razor view — this is the output cache that matters to you.
+Rather than rebuild a response from scratch, Umbraco hands out the JSON it already prepared. If you are running Umbraco as a headless CMS — feeding JSON to a Next.js frontend, a mobile app, or anything else that is not a Razor view — this is the output cache that matters to you.
 
 - Stores ready-made JSON responses on the server
 - Skips re-fetching from the published content cache on repeated requests to the same URL
@@ -35,98 +33,13 @@ This is the finished plate kept warm and ready to serve: rather than re-cook a r
 - Invalidated automatically when content is published or unpublished
 - Opt-in, disabled by default
 
-> **Going deeper — skim on a first read.** The next two sections crack open the machinery behind "invalidated automatically" with real code, and they are some of the most satisfying detail in the book. If you only want the big-picture map for now, skip ahead to the third cache (browser and proxy) and circle back once the lay of the land has settled.
-
-#### How invalidation actually works: tag-based eviction
-
-The bullet above says "invalidated when content is published." That is true, but the *how* is worth understanding — it explains why only the right responses get dropped instead of the whole cache being wiped.
-
-When the CDA stores a response, it stamps it with tags derived from the content it contains. Think of a tag as a sticky label on a cached entry. Every tag is a string constant defined in `Constants.DeliveryApi.OutputCache`:
-
-```csharp
-// src/Umbraco.Core/Constants-DeliveryApi.cs
-public const string ContentTagPrefix    = "umb-dapi-content-";        // + content GUID
-public const string MediaTagPrefix      = "umb-dapi-media-";          // + media GUID
-public const string AncestorTagPrefix   = "umb-dapi-content-ancestor-"; // + ancestor GUID
-public const string ContentTypeTagPrefix = "umb-dapi-content-type-";  // + content type alias
-public const string AllContentTag       = "umb-dapi-content-all";
-public const string AllMediaTag         = "umb-dapi-media-all";
-public const string AllTag              = "umb-dapi-all";
-```
-
-So a cached response for a page with GUID `a1b2...` gets the tag `umb-dapi-content-a1b2...` stamped on it at store time. This happens in `DeliveryApiOutputCachePolicyBase.ServeResponseAsync`, which runs once per unique response before it is written to the cache:
-
-```csharp
-// src/Umbraco.Cms.Api.Delivery/Caching/DeliveryApiOutputCachePolicyBase.cs
-foreach (IPublishedContent item in items)
-{
-    // Tag with specific item key for targeted eviction.
-    context.Tags.Add(ItemTagPrefix + item.Key);
-    // ... plus ancestor tags, content-type tags, and custom provider tags
-}
-```
-
-When an editor publishes content, Umbraco fires a `ContentCacheRefresherNotification`. The `DeliveryApiDocumentOutputCacheEvictionHandler` picks that up and evicts by tag — not by URL:
-
-```csharp
-// src/Umbraco.Cms.Api.Delivery/Caching/DeliveryApiDocumentOutputCacheEvictionHandler.cs
-await OutputCacheStore.EvictByTagAsync(
-    Constants.DeliveryApi.OutputCache.ContentTagPrefix + contentKey,
-    cancellationToken);
-```
-
-The result is surgical: only the responses that actually contain the changed content are dropped. A homepage that has nothing to do with the updated article keeps its cached response perfectly intact.
-
-**Branch publishes** need a wider sweep. If a whole branch of the content tree is refreshed (`TreeChangeTypes.RefreshBranch`), the handler also evicts by the ancestor tag — so any response that listed the changed node as an ancestor is cleared too:
-
-```csharp
-await OutputCacheStore.EvictByTagAsync(
-    Constants.DeliveryApi.OutputCache.AncestorTagPrefix + contentKey,
-    cancellationToken);
-```
-
-**Full-tree refreshes** fall back to evicting `AllTag`, which clears every CDA cache entry at once. This is the sledgehammer, used only when precision is not possible.
-
-#### Relation-based eviction
-
-There is a subtler case worth knowing about. Imagine page A has a picker property that points at page B, and the CDA response for A embeds B's data inline. If an editor publishes B, A's cached response is now stale — but A's GUID was never in the change payload, so the tag for A would not normally be touched.
-
-Umbraco handles this through its relation system. When content is saved with a picker property, Umbraco automatically records a `RelatedDocument` relation from A (the referencing page, treated as parent) to B (the picked item, treated as child). After every content change, the eviction handler queries those relations and evicts the referencing pages too:
-
-<div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
-
-```mermaid
-flowchart LR
-    subgraph Content tree
-        A["Page A\n(has picker → B)"]
-        B["Page B\n(published)"]
-    end
-
-    subgraph Relations table
-        R["RelatedDocument\nparent=A, child=B"]
-    end
-
-    subgraph CDA output cache
-        CA["cached response for A\ntag: umb-dapi-content-A"]
-        CB["cached response for B\ntag: umb-dapi-content-B"]
-    end
-
-    A -- picker saves relation --> R
-    B -- published --> EH["DeliveryApiDocumentOutputCacheEvictionHandler"]
-    EH -- EvictByTag umb-dapi-content-B --> CB
-    EH -- GetByChildId B → finds parent A --> R
-    R -- EvictByTag umb-dapi-content-A --> CA
-```
-
-</div>
-
-The code in `RelationOutputCacheEvictionHandlerBase.EvictRelatedContentAsync` looks up all `RelatedDocument` relations where the changed content is the child, then evicts the cache tag for each parent it finds. This is why publishing a referenced item correctly clears the pages that embed it — without needing to know their URLs in advance.
+The clever part is *how* that automatic invalidation stays precise. Rather than wiping the whole cache, Umbraco stamps each stored response with **tags** derived from the content it contains, and publishing evicts only the matching tags — right down to the pages that merely *embed* a changed item via a picker. That machinery — tag-based eviction, relation-based eviction, and the code behind them — has a chapter of its own: [Chapter 4 - The Content Delivery API](./04-the-content-delivery-api.md).
 
 > **Using Razor views instead?** If your project renders HTML server-side through Razor views, Umbraco 17 also ships a website output cache built on ASP.NET Core output caching[^01-output]. The idea is the same — store ready-made responses on the server — but it stores HTML rather than JSON. The rest of this book assumes headless-first, so that path is not covered in depth.
 
-### 3. Browser and proxy cache — the takeaway shelf
+### 3. Browser and proxy cache
 
-This is the bag waiting on the shelf by the door: ordinary HTTP caching, nothing Umbraco-specific, just the web platform doing its job. The customer grabs it and leaves without the kitchen lifting a finger.
+This is ordinary HTTP caching, nothing Umbraco-specific, just the web platform doing its job. When a response is served from here, it never reaches the server at all.
 
 - Controlled with `Cache-Control` headers
 - Described in the Umbraco docs as "Response Caching"[^01-response]
@@ -175,7 +88,7 @@ In Umbraco 17:
 - old configuration names still appear under `Umbraco:CMS:NuCache` for backward compatibility[^01-nucache]
 - output caching for API and website responses became a first-class documented feature
 
-One thing worth clearing up straight away: those `NuCache` config names are *just names*. The NuCache engine itself was retired in Umbraco 15, so v17 does **not** ship two cache engines for you to choose between. Anything still labelled `NuCache` — settings, serialiser options, SQL templates — is quietly feeding Hybrid Cache under the hood. [Chapter 10](./10-nucache-vs-hybrid-cache.md) walks through this in detail if you want the full story.
+One thing worth clearing up straight away: those `NuCache` config names are *just names*. The NuCache engine itself was retired in Umbraco 15, so v17 does **not** ship two cache engines for you to choose between. Anything still labelled `NuCache` — settings, serialiser options, SQL templates — is quietly feeding Hybrid Cache under the hood. [Chapter 12](./12-nucache-vs-hybrid-cache.md) walks through this in detail if you want the full story.
 
 Looking ahead beyond v17, the documentation also reveals where the platform is heading next:
 
@@ -238,7 +151,7 @@ The standard Umbraco contract for telling all servers:
 
 > "This thing changed — clear or refresh the matching cache entries."
 
-In kitchen terms, this is the head chef calling "86 the salmon!" — telling every station to stop serving a dish the instant it is no longer good. You will see implementations of this throughout the codebase, one per entity type (content, media, members, and so on).
+It is how a change on one server tells every server to stop serving a stale entry the instant it is no longer valid. You will see implementations of this throughout the codebase, one per entity type (content, media, members, and so on).
 
 ## Things to keep in mind
 
@@ -278,17 +191,17 @@ If a timeline helps, here it is in one line per era:
 
 ![Cache Architecture Evolution from v7 to v18](./assets/cache-timeline.svg)
 
-For more detail on the differences between NuCache and Hybrid Cache, see [Chapter 10 - NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md).
+For more detail on the differences between NuCache and Hybrid Cache, see [Chapter 12 - NuCache vs Hybrid Cache](./12-nucache-vs-hybrid-cache.md).
 
 ## In a nutshell
 
-If you remember nothing else from this chapter, remember the kitchen:
+If you remember nothing else from this chapter, remember the four surfaces:
 
-- The **database** is the walk-in fridge — the source of truth, but slow to visit.
-- The **published content cache** is your *mise en place* — prepped content, ready to assemble (built on `HybridCache` in v17).
-- The **output cache** is the plated dish under the heat lamp — a finished response ready to serve (JSON for the Delivery API, HTML for Razor).
-- The **browser and proxy cache** is the takeaway shelf — served without the kitchen doing a thing.
-- **Cache refreshers** and `DistributedCache` are the head chef shouting "86 the salmon!" so every station, on every server, stops serving the stale dish.
+- The **database** is the source of truth, but slow to reach.
+- The **published content cache** holds prepared published data, ready to assemble (built on `HybridCache` in v17).
+- The **output cache** holds a finished response ready to serve (JSON for the Delivery API, HTML for Razor).
+- The **browser and proxy cache** serves a response without the server doing any work.
+- **Cache refreshers** and `DistributedCache` tell every server to drop a stale entry the moment content changes.
 
 ### Three takeaways
 
@@ -298,16 +211,18 @@ If you remember nothing else from this chapter, remember the kitchen:
 
 ### Where to go next
 
-- [Chapter 2 - Website Output Caching](./02-website-output-caching.md) — the heat lamp, for Razor HTML.
-- [Chapter 3 - Published Content Cache, AppCaches, and Load Balancing](./03-published-cache-and-load-balancing.md) — the prep stations, up close.
-- [Chapter 4 - Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md) — the "86 the salmon!" chapter, and the heart of the book.
+- [Chapter 2 - The Published Object](./02-the-published-object.md) — `IPublishedContent`, the read model every cache in this book serves. **Read this next.**
+- [Chapter 3 - Website Output Caching](./03-website-output-caching.md) — server-side output caching for Razor HTML.
+- [Chapter 4 - The Content Delivery API](./04-the-content-delivery-api.md) — headless JSON output caching, and the surgical tag-eviction machinery.
+- [Chapter 5 - Published Content Cache, AppCaches, and Load Balancing](./05-published-cache-and-load-balancing.md) — the published content cache, up close.
+- [Chapter 6 - Cache Busting and Invalidation](./06-cache-busting-and-invalidation.md) — cache invalidation, the heart of the book.
 
-[^01-response]: See [U2 in the appendix](./14-appendix-sources.md#u2-response-caching).
-[^01-output]: See [U3](./14-appendix-sources.md#u3-website-output-caching) and [C6](./14-appendix-sources.md#c6-website-output-cache-implementation) in the appendix.
-[^01-hybrid]: See [M2](./14-appendix-sources.md#m2-aspnet-core-hybridcache), [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout), and [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main) in the appendix.
-[^01-msstack]: See [M1](./14-appendix-sources.md#m1-caching-in-net) and [M2](./14-appendix-sources.md#m2-aspnet-core-hybridcache) in the appendix.
-[^01-distributed]: See [C7](./14-appendix-sources.md#c7-core-cache-types-and-refreshers) and [M1](./14-appendix-sources.md#m1-caching-in-net) in the appendix.
-[^01-nucache]: See [10 - NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md) and [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout) in the appendix.
+[^01-response]: See [U2 in the appendix](./16-appendix-sources.md#u2-response-caching).
+[^01-output]: See [U3](./16-appendix-sources.md#u3-website-output-caching) and [C6](./16-appendix-sources.md#c6-website-output-cache-implementation) in the appendix.
+[^01-hybrid]: See [M2](./16-appendix-sources.md#m2-aspnet-core-hybridcache), [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout), and [C4](./16-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main) in the appendix.
+[^01-msstack]: See [M1](./16-appendix-sources.md#m1-caching-in-net) and [M2](./16-appendix-sources.md#m2-aspnet-core-hybridcache) in the appendix.
+[^01-distributed]: See [C7](./16-appendix-sources.md#c7-core-cache-types-and-refreshers) and [M1](./16-appendix-sources.md#m1-caching-in-net) in the appendix.
+[^01-nucache]: See [12 - NuCache vs Hybrid Cache](./12-nucache-vs-hybrid-cache.md) and [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout) in the appendix.
 
 ## Sources
 

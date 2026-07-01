@@ -1,10 +1,12 @@
-# 06. Cache Settings, Talks, and Field Notes
+# 08. Cache Settings, Talks, and Field Notes
 
 > **Start here.** This chapter is the control panel: the settings, talks, and field notes that explain not just what Umbraco caching does but why it does it that way. Once you have seen the earlier mechanics, these are the settings you actually tune. You will leave knowing which options control prewarming, payload limits, entry lifetimes, and content-type rebuild timing.
 
 This chapter maps the most important cache settings to real operational outcomes: startup cost, memory pressure, cache lifetime, and rebuild behaviour.
 
 This chapter gathers the settings and supporting material that help explain not just what Umbraco does, but why it does it that way.
+
+> **Tuning the read model's cache.** Most of the settings here govern how the published cache builds and holds `IPublishedContent` ([Chapter 2 - The Published Object](./02-the-published-object.md)): prewarming it (seeding), bounding its payload size, and timing its rebuilds.
 
 ## Why this chapter exists
 
@@ -115,7 +117,7 @@ xychart-beta
 
 ## Seeding settings
 
-These decide what gets prepped before doors open: the content warmed into cache on startup rather than fetched cold on first request. Important settings include:
+These decide which content is loaded into cache on startup rather than fetched on first request. Important settings include:
 
 - `ContentTypeKeys`
 - `DocumentBreadthFirstSeedCount`
@@ -237,7 +239,7 @@ These exist mostly for backward-compatibility reasons.
 
 > **Gotcha — old names, new engine.** Seeing `NuCache` keys in your configuration does not mean you are running the old system. The modern implementation is HybridCache-based, but not every old configuration name disappeared overnight, so a lingering key is a leftover label rather than a live gear.
 
-For a clearer separation between the old architecture and the newer one, see [10 - NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md). The deeper point is that the current architecture is no longer "just old NuCache with a new wrapper": it is a layered pipeline with explicit seeding, serialisation, rebuilding, and cache tagging, even if a few of the old names survive on the surface.
+For a clearer separation between the old architecture and the newer one, see [10 - NuCache vs Hybrid Cache](./12-nucache-vs-hybrid-cache.md). The deeper point is that the current architecture is no longer "just old NuCache with a new wrapper": it is a layered pipeline with explicit seeding, serialisation, rebuilding, and cache tagging, even if a few of the old names survive on the surface.
 
 ## Microsoft-first takeaway
 
@@ -321,7 +323,7 @@ That is also the cleanest place to separate index and cache concerns:
 - `Examine` is often the right answer when the hard part is discovery
 - `RuntimeCache` is often the right answer when the hard part is recomputation
 
-See [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md) for the full comparison.
+See [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md) for the full comparison.
 
 ## Best field note
 
@@ -415,6 +417,222 @@ The same thread also suggested that more than one regression could overlap:
 
 > **Tip — "slower after upgrade" is a symptom, not a diagnosis.** When teams report that a site became slower after a major upgrade, treat that as a description of symptoms first. It may reflect lock contention, a version-specific regression, query-shape changes under HybridCache, or several of those overlapping at once, so reaching straight for the cache-tuning dials can waste hours chasing the wrong cause.[^06-upgrade]
 
+## Troubleshooting field note: empty API responses right after startup
+
+A very common beginner report is: "the site just started, and the API returns nothing." Before touching any of the seeding dials above, it helps to know that **a cold cache is not an empty cache**. Since Umbraco 15, startup seeds a subset of content and lazy-loads the rest, so the first request to a not-yet-seeded page is a cache *miss* that fills on read — slightly slower, not empty. A genuinely empty response means the *source* that a layer reads from has nothing in it. There are two very different sources behind "the API", and they have two different fixes.[^06-empty-startup]
+
+The first question is not a cache-tuning question. It is: **is only the headless API empty, or is the rendered Razor site empty too?**
+
+**Case A — the Razor site renders, but the Delivery API returns `{ "total": 0, "items": [] }`.**
+
+The Delivery API does not read the published-content cache for its multiple-items queries. It reads a dedicated Examine index, `DeliveryApiContentIndex`. If that index was never built — a fresh install, a restored database, a brand-new environment, or the API only just enabled — the endpoint has nothing to return even though the website renders perfectly.
+
+- Confirm `Umbraco:CMS:DeliveryApi:Enabled` is `true` in configuration.
+- Rebuild the index: **Settings → Examine Management → DeliveryApiContentIndex → Rebuild index**. Once it is rebuilt, the multiple-items endpoint (`GET /umbraco/delivery/api/v2/content`) can serve content again.
+- If only *some* items are missing, suspect filtering rather than caching: `AllowedContentTypeAliases` / `DisallowedContentTypeAliases`, protected content (a content item whose protection changed must be republished or the index rebuilt), or simply unpublished content — the API serves published content unless a preview `Api-Key` header is sent.
+
+This is the same "the configuration changed but the already-built projection did not rewrite itself" point made in [Chapter 6](./06-cache-busting-and-invalidation.md) and [Chapter 13](./13-examine-indexes-and-cache-adjacent-querying.md). The index is a derived surface with its own rebuild path.
+
+One trap deserves calling out, because it sends beginners looking in the wrong place: the index can report a healthy document count in Examine Management and *still* serve an empty response. The community field reports behind this go further than "rebuild it" — they name a few distinct causes, and knowing which one you have changes the fix.[^06-empty-fieldreports]
+
+- **A startup race — confirmed in the v17.5 source.** Umbraco's own `RebuildOnStartupHandler` handles `UmbracoRequestBeginNotification`, so it runs on the *first HTTP request*, not before the application accepts traffic. When it finds empty indexes it *queues* the rebuild on a background thread with a one-minute delay (`RebuildIndexes(onlyEmptyIndexes, TimeSpan.FromMinutes(1))`) and returns without awaiting it. So on a cold boot the Delivery API can be queried — and answer `0 items` — during the window between that first request and the moment the background rebuild finishes. The symptom is an empty response for the first seconds-to-minutes after a restart that then heals itself. Issue #22883 proposes moving this work so that it blocks application start; until that ships, treat an empty response *immediately* after a restart as probably self-healing, and re-request once the rebuild has completed before assuming something is broken. If you cannot tolerate that window, warm the index yourself at startup — see the code below.
+- **A rebuild that does not travel.** Rebuilding an index from Examine Management is a *local* operation on the server you clicked. Unlike a publish, it is not broadcast to the other servers. In a load-balanced or split management/delivery setup, front-end nodes can keep an empty or stale index after you "fixed" it on one box. The remedy is to rebuild on every node (or on the Content Management instance that owns the delivery index), not just once on whichever server you happened to open.
+- **A projection that missed an update.** Some publish paths have historically not notified the index — programmatic `PublishBranch()` bulk operations were one such case, fixed in v17.0, and intermittent index resets have been reported without a confirmed cause. When core content is published but the index disagrees, a rebuild or a re-save reconciles them.
+
+The through-line is the one this book keeps returning to: the index is a derived surface, and "the dashboard shows documents" does not prove the endpoint will return them. A rebuild is not only a first-run step; it is a recurring operational lever.
+
+### Confirming the diagnosis
+
+Before reaching for a warm-up handler, two quick checks tell you which case you are in.
+
+**Search the application log for these source-verified messages.**
+
+```
+The Delivery API is not enabled, no indexing will performed for the Delivery API content index.
+```
+
+`DeliveryApiContentIndexPopulator` emits this at `Information` level at startup and when you load the Examine dashboard. If you see it, the fix is configuration, not a rebuild: set `Umbraco:CMS:DeliveryApi:Enabled` to `true` and restart. Rebuilding while the API is disabled populates nothing.
+
+```
+Could not find the index DeliveryApiContentIndex when attempting to execute a query.
+```
+
+`ApiContentQueryProvider` emits this at `Error` level on every query while the index is absent from Examine's registry. That is unusual — it means the index was never created, not merely empty. Rebuilding from the dashboard will re-register and populate it.
+
+```
+Starting async background thread for rebuilding index DeliveryApiContentIndex.
+```
+
+`ExamineIndexRebuilder` emits this at `Information` level when a background rebuild is queued. Seeing it and then immediately querying the API puts you inside the startup-race window — wait for the rebuild to finish before concluding the API is broken.
+
+**Check the document count in Examine Management.**
+
+Go to **Settings → Examine Management → DeliveryApiContentIndex**. The count shown is the number of documents the multiple-items endpoint will actually search. A count of zero with healthy content in the backoffice tree means the index needs a rebuild. A non-zero count that still returns an empty API response points at filtering rather than a missing source: `AllowedContentTypeAliases`, protected content, or unpublished items — not a rebuild problem.
+
+### Code: warming the Delivery API index at startup
+
+If you cannot live with the cold-boot window, you can rebuild the Delivery API index yourself before the site starts serving. The trap is that the obvious code *looks* like it waits but does not.
+
+The rebuild APIs default to `useBackgroundThread: true`, which queues the work and returns straight away. Awaiting that call tells you the work was *scheduled*, not that the index is *ready*:
+
+```csharp
+using Umbraco.Cms.Core.Events;
+using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Infrastructure.Examine;
+
+// Does NOT do what it looks like: the await returns long before the index is built.
+public class NaiveIndexWarmup
+    : INotificationAsyncHandler<UmbracoApplicationStartingNotification>
+{
+    private readonly IIndexRebuilder _indexRebuilder;
+
+    public NaiveIndexWarmup(IIndexRebuilder indexRebuilder)
+        => _indexRebuilder = indexRebuilder;
+
+    public async Task HandleAsync(
+        UmbracoApplicationStartingNotification notification,
+        CancellationToken cancellationToken)
+        // useBackgroundThread defaults to true, so this queues the rebuild and
+        // completes immediately. The index is still empty when the await returns.
+        => await _indexRebuilder.RebuildIndexesAsync(onlyEmptyIndexes: true);
+}
+```
+
+The version that actually blocks rebuilds only the Delivery API index, on a background thread turned *off*, and runs on `UmbracoApplicationStartingNotification`. In the standard site template — where `Program.cs` calls `await app.BootUmbracoAsync()` before `app.Run()` — the runtime's `StartAsync` (which publishes this notification with an awaited `PublishAsync`) completes before Kestrel serves traffic, so blocking here genuinely holds off the first request. That guarantee depends on the boot sequence: a site that starts the runtime only through its hosted-service registration can begin listening before this notification fires, in which case the block narrows the window rather than closing it. By this point `MainDom` is already acquired and the runtime level is `Run`, so `CanRun()` is satisfied on the main node:
+
+```csharp
+using Microsoft.Extensions.Logging;
+using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Events;
+using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Infrastructure.Examine;
+using Umbraco.Cms.Infrastructure.Models;
+
+public class DeliveryApiIndexWarmup
+    : INotificationAsyncHandler<UmbracoApplicationStartingNotification>
+{
+    private readonly IIndexRebuilder _indexRebuilder;
+    private readonly ILogger<DeliveryApiIndexWarmup> _logger;
+
+    public DeliveryApiIndexWarmup(
+        IIndexRebuilder indexRebuilder,
+        ILogger<DeliveryApiIndexWarmup> logger)
+    {
+        _indexRebuilder = indexRebuilder;
+        _logger = logger;
+    }
+
+    public async Task HandleAsync(
+        UmbracoApplicationStartingNotification notification,
+        CancellationToken cancellationToken)
+    {
+        // Only a fully installed, running site should rebuild — skip install/upgrade boots.
+        if (notification.RuntimeLevel != RuntimeLevel.Run)
+        {
+            return;
+        }
+
+        const string indexName = Constants.UmbracoIndexes.DeliveryApiContentIndexName;
+
+        // useBackgroundThread: false makes the await wait for the rebuild to finish.
+        Attempt<IndexRebuildResult> result = await _indexRebuilder.RebuildIndexAsync(
+            indexName,
+            delay: TimeSpan.Zero,
+            useBackgroundThread: false);
+
+        // On a subscriber node (not MainDom) the rebuilder returns NotAllowedToRun rather
+        // than throwing, so the built-in first-request handler stays the fallback there.
+        if (result.Success is false)
+        {
+            _logger.LogInformation(
+                "Delivery API index warm-up skipped: {Result}", result.Result);
+        }
+    }
+}
+```
+
+Register it in a composer:
+
+```csharp
+using Umbraco.Cms.Core.Composing;
+using Umbraco.Cms.Core.DependencyInjection;
+using Umbraco.Cms.Core.Notifications;
+
+public class DeliveryApiIndexWarmupComposer : IComposer
+{
+    public void Compose(IUmbracoBuilder builder)
+        => builder.AddNotificationAsyncHandler<
+            UmbracoApplicationStartingNotification, DeliveryApiIndexWarmup>();
+}
+```
+
+Be honest about the trade-off: this deliberately buys first-request correctness with slower startup, which is exactly the cost the seeding section above keeps warning about. On a large site, blocking every boot on a full index rebuild can hurt more than the occasional empty first response. There is also a sharper, load-balanced failure mode to respect: this is *why* Umbraco's own handler defers the rebuild to the first request instead of blocking boot. When many nodes restart at once — a scale-out event, a rolling deploy, an Azure recycle — a synchronous startup rebuild on every node hammers the database with indexing reads at the same moment, and can take content locks that cause SQL timeouts and failed boots. That is the same operational hazard Shannon Deminick documents for front-end Examine rebuilds (see [F12](./16-appendix-sources.md#f12-shannon-deminick-examine-field-notes) and [Chapter 13](./13-examine-indexes-and-cache-adjacent-querying.md)), and a startup health probe that times out during the rebuild can turn a slow boot into a crash loop. So reach for this only when an empty window is genuinely unacceptable; rebuild just the one index, as above, never all of them; and on a busy cluster prefer keeping a node out of the load balancer until it is warm (a readiness gate) over blocking every boot.
+
+### Code: why a single rebuild call will not fix a cluster
+
+The same warm-up handler quietly addresses the load-balancing case too, because it runs on *every* node as that node boots — so each server rebuilds its own copy. What does **not** work is exposing one rebuild endpoint and assuming it heals the farm:
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using Umbraco.Cms.Core;
+using Umbraco.Cms.Infrastructure.Examine;
+
+[ApiController]
+[Route("/internal/rebuild-delivery-index")]
+public class RebuildDeliveryIndexController : ControllerBase
+{
+    private readonly IIndexRebuilder _indexRebuilder;
+
+    public RebuildDeliveryIndexController(IIndexRebuilder indexRebuilder)
+        => _indexRebuilder = indexRebuilder;
+
+    // Rebuilds ONLY the node that happens to handle this request. In a load-balanced
+    // setup the other nodes keep their stale or empty index — the rebuild is not
+    // broadcast the way a content publish is.
+    [HttpPost]
+    public async Task<IActionResult> Post()
+    {
+        await _indexRebuilder.RebuildIndexAsync(
+            Constants.UmbracoIndexes.DeliveryApiContentIndexName);
+
+        return Ok();
+    }
+}
+```
+
+There is no built-in "rebuild everywhere" broadcast. The reliable options are to let each node rebuild itself on startup (the warm-up handler above) or to hit each node individually behind the load balancer. This is the index-side echo of the whole-cache lesson in [Chapter 6](./06-cache-busting-and-invalidation.md): keep the derived data local, but make sure *every* node gets told to rebuild it.
+
+For the third cause — a projection that simply missed an update — the fix on the v17 baseline is mostly "you already have it": programmatic `PublishBranch()` updates the Delivery API index correctly since v17.0. The lesson only bites when you bypass the notification pipeline entirely (raw database writes, low-level imports). In that case, treat a rebuild as part of the operation, not an afterthought — run the same `RebuildIndexAsync` for the Delivery API index once the bulk change is done.
+
+**Case B — the rendered site is also empty: pages are blank and `IPublishedContent` queries return nothing.**
+
+Now the published-content cache itself has no data to serve. Under Hybrid Cache the in-memory cache is loaded from the database cache (the `cmsContentNu` table); if that database cache was never generated or is stale — common after restoring a database copy, an interrupted upgrade, or copying an environment without its cache tables populated — there is nothing to load into memory.
+
+- Go to the **Settings → Published Status** dashboard, **Caches** section.
+- Reload the **Memory Cache** first. This entirely reloads the in-memory cache from the database cache. Use it when you suspect the memory cache did not refresh properly.
+- If reloading memory is not enough, rebuild the **Database Cache**. This regenerates the `cmsContentNu` content. Use it when the database cache itself was never generated correctly.
+- In a load-balanced setup, remember that each server has its own in-memory cache. A reload or rebuild has to reach every node, not just the one you are clicking on (see [Chapter 5](./05-published-cache-and-load-balancing.md) and [Chapter 6](./06-cache-busting-and-invalidation.md)).
+
+<div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
+
+```mermaid
+flowchart TD
+    A["Empty responses after startup"] --> B{"Is the rendered site<br/>also empty?"}
+    B -- "No, only the Delivery API" --> C["Delivery API reads its own index"]
+    C --> D["Enable DeliveryApi, then rebuild<br/>DeliveryApiContentIndex in Examine Management"]
+    C --> E["Only some items missing?<br/>Check allowed/disallowed types,<br/>protected and unpublished content"]
+    B -- "Yes, pages are blank too" --> F["Published-content cache has no data"]
+    F --> G["Published Status: reload Memory Cache"]
+    G --> H["Still empty? Rebuild the Database Cache"]
+    F --> I["Load balanced? The instruction<br/>must reach every node"]
+```
+
+</div>
+
+> **Tip — empty versus cold.** *Empty* means the source has nothing, so you rebuild the source: the Delivery API index, or the database cache. *Cold* means the source has data but the cache is not warmed yet, so it fills on first request — or you seed it deliberately (see [Chapter 5](./05-published-cache-and-load-balancing.md)). Reaching for seeding settings when the real problem is an unbuilt index or database cache will not help, because there is nothing to seed *from* yet.
+
+The rule worth remembering is to **match the empty surface to the source it actually reads.** The Delivery API reads its own index; the rendered site reads the published-content cache. Rebuild the one that is genuinely empty, not the first one that comes to mind.
+
 ## What the `main` branch adds to the story
 
 The newer source shows several details that are easy to miss in talks alone:
@@ -424,7 +642,7 @@ The newer source shows several details that are easy to miss in talks alone:
 - generation counters stop stale in-flight reads from clobbering fresher entries
 - serialiser changes can trigger full database cache rebuilds at startup
 
-None of these are small implementation details; they are the practical engineering that makes the whole architecture reliable rather than merely fast. See also [09 - Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md).
+None of these are small implementation details; they are the practical engineering that makes the whole architecture reliable rather than merely fast. See also [09 - Future Hybrid Cache Architecture](./11-future-hybrid-cache-architecture.md).
 
 ## Trade-off chart
 
@@ -463,10 +681,10 @@ quadrantChart
 
 ### Where to go next
 
-- [10 - NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md) — the clean split between the old architecture and the new one.
-- [09 - Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md) — the seeding, serialisation, and rebuild machinery these dials control.
-- [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md) — the query habits the talks keep warning about.
-- [15 - Appendix: UMB.FYI Archive Notes](./15-appendix-umbfyi-archive-notes.md) — the archive trail for HybridCache talks, deliberate warm-up, and operational performance notes.
+- [10 - NuCache vs Hybrid Cache](./12-nucache-vs-hybrid-cache.md) — the clean split between the old architecture and the new one.
+- [09 - Future Hybrid Cache Architecture](./11-future-hybrid-cache-architecture.md) — the seeding, serialisation, and rebuild machinery these dials control.
+- [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md) — the query habits the talks keep warning about.
+- [15 - Appendix: UMB.FYI Archive Notes](./17-appendix-umbfyi-archive-notes.md) — the archive trail for HybridCache talks, deliberate warm-up, and operational performance notes.
 
 ## Sources
 
@@ -476,11 +694,13 @@ quadrantChart
 - Supporting material:
   - [Hybrid Cache förändrar allt — Umbraco Kalaset session (YouTube)](https://www.youtube.com/watch?v=JyXlvDoreS8)
   - [Hybrid Cache förändrar allt — Umbraco Kalaset slides (PDF)](https://www.umbracokalaset.se/media/ccvhwzvs/hybrid-cache-forandrar-allt.pdf)
-  - [UMB.FYI archive notes](./15-appendix-umbfyi-archive-notes.md)
+  - [UMB.FYI archive notes](./17-appendix-umbfyi-archive-notes.md)
 
-[^06-talks]: See [T1](./14-appendix-sources.md#t1-releasing-hybridcache-into-the-wild-with-umbraco), [T2](./14-appendix-sources.md#t2-hybrid-cache-forandrar-allt-pdf), [T4](./14-appendix-sources.md#t4-enkelmedia-article), [T5](./14-appendix-sources.md#t5-enkelmedia-pdf), [B1](./14-appendix-sources.md#b1-umbraco-15-release), [B5](./14-appendix-sources.md#b5-umbraco-product-update---august-2024), and [B6](./14-appendix-sources.md#b6-umbraco-product-update---q1-2025).
-[^06-payload]: See [M6](./14-appendix-sources.md#m6-hybridcacheoptions), [U4](./14-appendix-sources.md#u4-cache-settings-for-umbraco-17), [U5](./14-appendix-sources.md#u5-current-cache-settings-page), and [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main).
-[^06-settings-reference]: See [U3](./14-appendix-sources.md#u3-website-output-caching), [U4](./14-appendix-sources.md#u4-cache-settings-for-umbraco-17), [U5](./14-appendix-sources.md#u5-current-cache-settings-page), [M6](./14-appendix-sources.md#m6-hybridcacheoptions), and [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main).
-[^06-rebuildmode]: See [U5](./14-appendix-sources.md#u5-current-cache-settings-page), [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main), and [C5](./14-appendix-sources.md#c5-claudemd-for-umbracopublishedcachehybridcache).
-[^06-upgrade]: See [F1](./14-appendix-sources.md#f1-website-significantly-slower-since-upgrading-from-v13-to-v16), [F2](./14-appendix-sources.md#f2-failed-to-acquire-write-lock-for-id--333), and [F3](./14-appendix-sources.md#f3-umbracooauth_completecode-stuck-after-umbracologout).
-[^06-kjac-cache-all]: See [F10](./14-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes), especially "So you want to cache all the things?".
+[^06-talks]: See [T1](./16-appendix-sources.md#t1-releasing-hybridcache-into-the-wild-with-umbraco), [T2](./16-appendix-sources.md#t2-hybrid-cache-forandrar-allt-pdf), [T4](./16-appendix-sources.md#t4-enkelmedia-article), [T5](./16-appendix-sources.md#t5-enkelmedia-pdf), [B1](./16-appendix-sources.md#b1-umbraco-15-release), [B5](./16-appendix-sources.md#b5-umbraco-product-update---august-2024), and [B6](./16-appendix-sources.md#b6-umbraco-product-update---q1-2025).
+[^06-payload]: See [M6](./16-appendix-sources.md#m6-hybridcacheoptions), [U4](./16-appendix-sources.md#u4-cache-settings-for-umbraco-17), [U5](./16-appendix-sources.md#u5-current-cache-settings-page), and [C4](./16-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main).
+[^06-settings-reference]: See [U3](./16-appendix-sources.md#u3-website-output-caching), [U4](./16-appendix-sources.md#u4-cache-settings-for-umbraco-17), [U5](./16-appendix-sources.md#u5-current-cache-settings-page), [M6](./16-appendix-sources.md#m6-hybridcacheoptions), and [C4](./16-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main).
+[^06-rebuildmode]: See [U5](./16-appendix-sources.md#u5-current-cache-settings-page), [C4](./16-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main), and [C5](./16-appendix-sources.md#c5-claudemd-for-umbracopublishedcachehybridcache).
+[^06-upgrade]: See [F1](./16-appendix-sources.md#f1-website-significantly-slower-since-upgrading-from-v13-to-v16), [F2](./16-appendix-sources.md#f2-failed-to-acquire-write-lock-for-id--333), and [F3](./16-appendix-sources.md#f3-umbracooauth_completecode-stuck-after-umbracologout).
+[^06-kjac-cache-all]: See [F10](./16-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes), especially "So you want to cache all the things?".
+[^06-empty-startup]: Rebuilding the `DeliveryApiContentIndex` is documented in the [Content Delivery API article](https://docs.umbraco.com/umbraco-cms/17.latest/develop-with-umbraco/headless-and-apis/content-delivery-api), which notes that the index must be rebuilt (or content republished) before the multiple-items endpoint returns content. The Memory Cache / Database Cache options live on the Published Status dashboard, described in [Settings dashboards](https://docs.umbraco.com/umbraco-cms/17.latest/model-your-content/content-types-and-structure/backoffice/settings-dashboards). See also [U4](./16-appendix-sources.md#u4-cache-settings-for-umbraco-17) and [U5](./16-appendix-sources.md#u5-current-cache-settings-page) for the seeding settings, and [Chapter 5](./05-published-cache-and-load-balancing.md) on why a cold cache fills on read rather than returning empty.
+[^06-empty-fieldreports]: See [F13](./16-appendix-sources.md#f13-delivery-api-empty-response-and-index-reset-field-reports) for the community reports of index resets, healthy-but-empty indexes in multi-instance setups, and bulk-publish gaps, and [chapter 14](./14-lessons-from-the-issue-tracker.md) for the related startup and upgrade issues catalogued in [F4](./16-appendix-sources.md#f4-open-cache-issue-survey-v17v18) and [F6](./16-appendix-sources.md#f6-closed-cache-issue-survey-v17v18).

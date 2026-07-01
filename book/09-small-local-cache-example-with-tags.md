@@ -1,14 +1,14 @@
-# 07. Small Local Cache Example with Tags
+# 09. Small Local Cache Example with Tags
 
 > **Start here.** This is the smallest possible cache pattern in Umbraco, not the full enterprise load-balanced story. You will learn the fill-and-bust loop in its purest form: cache something in `RuntimeCache`, then clear it by key when the content that affects it changes.
 
-If the bigger cache chapters are the whole restaurant kitchen, this one is a single sticky note on the wall listing today's specials. You write it once, you wipe and rewrite it when the special changes, and everyone reads it in between. That is the entire idea, and it is the "hello world" of fill-and-bust.
+This is the simplest cache example in the book: a single local cache key that you fill once, clear and refill when its data changes, and read in between. That is the entire idea, and it is the "hello world" of fill-and-bust.
+
+> **Not the read model.** This pattern caches *your own* computed data in `RuntimeCache` — not `IPublishedContent` ([Chapter 2 - The Published Object](./02-the-published-object.md)). Umbraco manages the read model's cache for you; here you are the one deciding what to store and when to bust it.
 
 ## Why this example is useful
 
-The bigger cache chapters can feel abstract, so this one strips the idea down to its bones. Pick a cache key, decide how to fill it, and decide when to bust it. That short loop is the basic muscle behind every bigger cache strategy.
-
-> **Analogy — the sticky note.** Of all the stations in the kitchen, this is the simplest: a sticky note listing today's specials. You fill it once (fill by key), you wipe and rewrite it when the special changes (clear by key, refill on next request), and the rest of the time everyone just reads it. Master this and the fancier stations are only variations on the same move.
+The bigger cache chapters can feel abstract, so this one strips the idea down to its bones. Pick a cache key, decide how to fill it, and decide when to bust it. That short loop is the basic mechanism behind every bigger cache strategy.
 
 ## The scenario from the docs
 
@@ -180,16 +180,16 @@ It is also easy to debug.
 
 ## Why this pattern is not enough on its own
 
-> **Gotcha — one server only.** By itself this pattern is not the whole load-balanced story: it clears one server's sticky note, but says nothing about the others. Picture a chain of branches where every branch has its own note on its own wall. Wiping the note in one branch does nothing to the notes in the rest, so those still show the old special.
+> **Gotcha — one server only.** By itself this pattern is not the whole load-balanced story: it clears one server's cache key, but says nothing about the others. In a load-balanced setup every server has its own copy of the runtime cache. Clearing the key on one server does nothing to the same key on the rest, so those still return the old value.
 
-It clears a local runtime cache key, but it does not automatically describe how every other server should clear the same key. That makes it a great pattern for understanding local cache behaviour, but to be multi-server-safe it must be combined with the `ICacheRefresher` and `DistributedCache` model, which is exactly the head chef shouting "86 the salmon!" down the line so every branch wipes its note at once.
+It clears a local runtime cache key, but it does not automatically describe how every other server should clear the same key. That makes it a great pattern for understanding local cache behaviour, but to be multi-server-safe it must be combined with the `ICacheRefresher` and `DistributedCache` model, which is how a change on one server tells every server to clear the same key at once.
 
 There is also a separate question hiding underneath it:
 
 - if the problem is "remember this small computed result", `RuntimeCache` is a good fit
 - if the problem is "find the right items across a large content set", Examine may be the better fit
 
-See [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md).
+See [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md).
 
 ## Historical field note: derived data still needs its own busting rule
 
@@ -267,7 +267,7 @@ That means both patterns answer the same question from different angles:
 
 ## In a nutshell
 
-This tags example teaches the smallest useful cache-busting loop in Umbraco: fill by key, clear by key, refill on next request. It is the one sticky note on the wall — perfect on a single server and perfect for learning the move, but on its own it only wipes its own note, so a load-balanced setup still needs `ICacheRefresher` and `DistributedCache` to tell every branch at once.
+This tags example teaches the smallest useful cache-busting loop in Umbraco: fill by key, clear by key, refill on next request. It is a single local cache key — perfect on a single server and perfect for learning the pattern, but on its own it only clears its own copy, so a load-balanced setup still needs `ICacheRefresher` and `DistributedCache` to clear the key on every server at once.
 
 ### Three takeaways
 
@@ -277,9 +277,9 @@ This tags example teaches the smallest useful cache-busting loop in Umbraco: fil
 
 ### Where to go next
 
-- [04 - Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md) for the busting story in full.
-- [03 - Published Cache and Load Balancing](./03-published-cache-and-load-balancing.md) for why multiple servers change everything.
-- [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md) for when "search across content" beats "remember one result".
+- [04 - Cache Busting and Invalidation](./06-cache-busting-and-invalidation.md) for the busting story in full.
+- [03 - Published Cache and Load Balancing](./05-published-cache-and-load-balancing.md) for why multiple servers change everything.
+- [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md) for when "search across content" beats "remember one result".
 
 ## Sources
 
@@ -288,6 +288,6 @@ This tags example teaches the smallest useful cache-busting loop in Umbraco: fil
   - [Application cache](https://docs.umbraco.com/umbraco-cms/extend-your-project/server-side-extensions/cache/application-cache.md)
   - [Server-side cache extensions](https://docs.umbraco.com/umbraco-cms/extend-your-project/server-side-extensions/cache.md)
 
-[^07-tags]: See [U10 in the appendix](./14-appendix-sources.md#u10-tags-example) and [U7](./14-appendix-sources.md#u7-application-cache-docs).
-[^07-publish]: See [U10](./14-appendix-sources.md#u10-tags-example) and [U6](./14-appendix-sources.md#u6-server-side-extensions-cache-docs).
-[^07-24days-derived]: See [F9 in the appendix](./14-appendix-sources.md#f9-24days-caching-field-notes), especially the 2013 server-side caching strategies article. Treat it as historical field-note evidence, not current API guidance.
+[^07-tags]: See [U10 in the appendix](./16-appendix-sources.md#u10-tags-example) and [U7](./16-appendix-sources.md#u7-application-cache-docs).
+[^07-publish]: See [U10](./16-appendix-sources.md#u10-tags-example) and [U6](./16-appendix-sources.md#u6-server-side-extensions-cache-docs).
+[^07-24days-derived]: See [F9 in the appendix](./16-appendix-sources.md#f9-24days-caching-field-notes), especially the 2013 server-side caching strategies article. Treat it as historical field-note evidence, not current API guidance.

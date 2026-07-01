@@ -1,4 +1,4 @@
-# 05. HQ Extensions and Cache
+# 07. HQ Extensions and Cache
 
 > **Start here.** You already know the standard Umbraco cache model. This chapter focuses on what changes when you add HQ extensions, so you can quickly see where behaviour differs for Forms, Deploy, Engage, Commerce, and Search.
 
@@ -7,6 +7,8 @@ Umbraco HQ ships several products and add-ons that extend the CMS. This chapter 
 Each one interacts with the Umbraco cache in a different way. This chapter only covers the differences from the standard CMS cache behaviour described in the earlier chapters. If a product simply rides the normal cache refresher pipeline without doing anything unusual, that is not worth repeating here.
 
 Each product changes a specific part of the caching picture. The goal here is to isolate those differences without repeating baseline CMS behaviour.
+
+> **Still the same read model.** However these products differ, most still read the same `IPublishedContent` ([Chapter 2 - The Published Object](./02-the-published-object.md)), and where they expose content headless they ride the Content Delivery API and its output cache ([Chapter 4](./04-the-content-delivery-api.md)). The differences are in what each product caches *on top*, not in the object underneath.
 
 ## At a glance
 
@@ -77,6 +79,15 @@ flowchart LR
 - If `true`: the automatic cache refresh is skipped; you must rebuild cache and search indexes manually.
 
 The Deploy docs advise leaving this at `false` in production.[^05-suppress]
+
+### How the during-transfer suppression works
+
+The "per-item notifications are suppressed" behaviour is not magic. It is the separate `Suspensions` settings section. By default, Deploy suspends scheduled publishing, Examine indexing, document-cache updates, and (for restores) signature-database updates while an operation runs, so a large batch does not thrash those data stores item by item. Each Deploy operation can be tuned independently, using values such as `None`, `ScheduledPublishing`, `Examine`, `DocumentCache`, `Signatures`, or `All`.[^05-suppress]
+
+So there are really two phases controlled by two different switches:
+
+- **During transfer** — `Suspensions` holds back the normal per-item cache and index events.
+- **After transfer** — `SuppressCacheRefresherNotifications` (default `false`) controls whether the single coordinated refresher step fires. Leaving it `false` keeps the cache and search index current once the batch completes.
 
 ### Advice for extension authors
 
@@ -159,9 +170,20 @@ That makes it cache-adjacent rather than a normal cache.
 
 ### Search indexes are derived data
 
-A search index stores a prepared representation of content so queries can find matches quickly without walking the published tree every time. That is the same distinction explained in [Chapter 11](./11-examine-indexes-and-cache-adjacent-querying.md): a cache remembers an answer; an index helps find answers.
+A search index stores a prepared representation of content so queries can find matches quickly without walking the published tree every time. That is the same distinction explained in [Chapter 13](./13-examine-indexes-and-cache-adjacent-querying.md): a cache remembers an answer; an index helps find answers.
 
 The Umbraco Search docs currently describe compatibility with Umbraco 17, while the repository describes the project as the new search implementation that may replace the current one from Umbraco v19 onward.[^05-search]
+
+### The packages
+
+Umbraco Search ships as several NuGet packages, each covering one concern:
+
+- `Umbraco.Cms.Search.Core` — the core search abstractions and services.
+- `Umbraco.Cms.Search.BackOffice` — lets Search power the backoffice content search.
+- `Umbraco.Cms.Search.DeliveryApi` — lets Search power the Content Delivery API.
+- `Umbraco.Cms.Search.Provider.Examine` — the default provider, backed by Examine and Lucene.
+
+You enable it from a composer with `AddSearchCore()` plus a provider such as `AddExamineSearchProvider()`. Splitting core abstractions from the provider is the same provider-agnostic shape described in [Chapter 13](./13-examine-indexes-and-cache-adjacent-querying.md): the abstraction stays stable while the underlying index storage can change.[^05-search]
 
 ### It uses cache refreshers as a signal bus
 
@@ -266,10 +288,10 @@ flowchart TD
 
 ### Where to go next
 
-- [Chapter 4: Cache busting and invalidation](./04-cache-busting-and-invalidation.md) — the refresher and `DistributedCache` mechanics Deploy batches on top of.
-- [Chapter 2: Website output caching](./02-website-output-caching.md) — the exclusion rules that make Forms, Engage, and Commerce pages behave as they do.
-- [Chapter 11: Examine, indexes, and cache-adjacent querying](./11-examine-indexes-and-cache-adjacent-querying.md) — why Search belongs near caching without being the same thing.
-- [Chapter 7: Small local cache example with tags](./07-small-local-cache-example-with-tags.md) — the tag-and-evict pattern to use for cacheable catalogue pages.
+- [Chapter 6: Cache busting and invalidation](./06-cache-busting-and-invalidation.md) — the refresher and `DistributedCache` mechanics Deploy batches on top of.
+- [Chapter 3: Website output caching](./03-website-output-caching.md) — the exclusion rules that make Forms, Engage, and Commerce pages behave as they do.
+- [Chapter 13: Examine, indexes, and cache-adjacent querying](./13-examine-indexes-and-cache-adjacent-querying.md) — why Search belongs near caching without being the same thing.
+- [Chapter 9: Small local cache example with tags](./09-small-local-cache-example-with-tags.md) — the tag-and-evict pattern to use for cacheable catalogue pages.
 
 ## Sources
 
@@ -282,14 +304,14 @@ flowchart TD
 - [Umbraco Search docs](https://docs.umbraco.com/umbraco-search)
 - [Umbraco.Cms.Search repository](https://github.com/umbraco/Umbraco.Cms.Search)
 
-[^05-forms]: See [U18 in the appendix](./14-appendix-sources.md#u18-umbraco-forms-docs) and [U3](./14-appendix-sources.md#u3-website-output-caching).
-[^05-engage]: See [U19 in the appendix](./14-appendix-sources.md#u19-umbraco-engage-docs) and [U3](./14-appendix-sources.md#u3-website-output-caching).
-[^05-commerce]: See [U20 in the appendix](./14-appendix-sources.md#u20-umbraco-commerce-docs), [U3](./14-appendix-sources.md#u3-website-output-caching), and [U6](./14-appendix-sources.md#u6-server-side-extensions-cache-docs).
-[^05-suppress]: See [U12 in the appendix](./14-appendix-sources.md#u12-deploy-settings).
-[^05-search]: See [U21](./14-appendix-sources.md#u21-umbraco-search-overview), [U22](./14-appendix-sources.md#u22-umbraco-search-installation), and [S2](./14-appendix-sources.md#s2-umbracocmssearch-repository) in the appendix.
-[^05-search-cache]: See [U24](./14-appendix-sources.md#u24-umbraco-search-reindexing-content), [U25](./14-appendix-sources.md#u25-umbraco-search-indexing-notification-handling), and [S2](./14-appendix-sources.md#s2-umbracocmssearch-repository). The CMS source trees supplied for this book do not include the separate Search implementation.
-[^05-search-docs]: See [U23 in the appendix](./14-appendix-sources.md#u23-umbraco-search-database-cache-for-index-values). Implementation details need the separate [S2](./14-appendix-sources.md#s2-umbracocmssearch-repository) source tree to verify locally.
-[^05-search-shadow]: See [S2](./14-appendix-sources.md#s2-umbracocmssearch-repository), especially the Examine provider source; this is package-source evidence rather than CMS-source evidence in the local checkouts.
-[^05-search-db-cache]: See [U23 in the appendix](./14-appendix-sources.md#u23-umbraco-search-database-cache-for-index-values).
-[^05-search-reindex]: See [U24 in the appendix](./14-appendix-sources.md#u24-umbraco-search-reindexing-content).
-[^05-search-notifications]: See [U25 in the appendix](./14-appendix-sources.md#u25-umbraco-search-indexing-notification-handling).
+[^05-forms]: See [U18 in the appendix](./16-appendix-sources.md#u18-umbraco-forms-docs) and [U3](./16-appendix-sources.md#u3-website-output-caching).
+[^05-engage]: See [U19 in the appendix](./16-appendix-sources.md#u19-umbraco-engage-docs) and [U3](./16-appendix-sources.md#u3-website-output-caching).
+[^05-commerce]: See [U20 in the appendix](./16-appendix-sources.md#u20-umbraco-commerce-docs), [U3](./16-appendix-sources.md#u3-website-output-caching), and [U6](./16-appendix-sources.md#u6-server-side-extensions-cache-docs).
+[^05-suppress]: See [U12 in the appendix](./16-appendix-sources.md#u12-deploy-settings).
+[^05-search]: See [U21](./16-appendix-sources.md#u21-umbraco-search-overview), [U22](./16-appendix-sources.md#u22-umbraco-search-installation), and [S2](./16-appendix-sources.md#s2-umbracocmssearch-repository) in the appendix.
+[^05-search-cache]: See [U24](./16-appendix-sources.md#u24-umbraco-search-reindexing-content), [U25](./16-appendix-sources.md#u25-umbraco-search-indexing-notification-handling), and [S2](./16-appendix-sources.md#s2-umbracocmssearch-repository). The CMS source trees supplied for this book do not include the separate Search implementation.
+[^05-search-docs]: See [U23 in the appendix](./16-appendix-sources.md#u23-umbraco-search-database-cache-for-index-values). Implementation details need the separate [S2](./16-appendix-sources.md#s2-umbracocmssearch-repository) source tree to verify locally.
+[^05-search-shadow]: See [S2](./16-appendix-sources.md#s2-umbracocmssearch-repository), especially the Examine provider source; this is package-source evidence rather than CMS-source evidence in the local checkouts.
+[^05-search-db-cache]: See [U23 in the appendix](./16-appendix-sources.md#u23-umbraco-search-database-cache-for-index-values).
+[^05-search-reindex]: See [U24 in the appendix](./16-appendix-sources.md#u24-umbraco-search-reindexing-content).
+[^05-search-notifications]: See [U25 in the appendix](./16-appendix-sources.md#u25-umbraco-search-indexing-notification-handling).

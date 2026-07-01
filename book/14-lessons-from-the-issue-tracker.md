@@ -1,10 +1,12 @@
-# 12. Lessons from the Issue Tracker
+# 14. Lessons from the Issue Tracker
 
 The earlier chapters explain how Umbraco caching is *meant* to work.
 
 This chapter does the opposite. It looks at what actually breaks.
 
 It is a point-in-time survey of the open, genuinely cache-related issues on the Umbraco CMS tracker, read in full (body plus comments) and grouped into the patterns that matter for Umbraco 17 and 18.[^14-survey]
+
+> **Where it bites.** Most of these reports are failures in the read model — stale, missing, or unbuilt `IPublishedContent` ([Chapter 2 - The Published Object](./02-the-published-object.md)) — or in its projections, the output caches ([Chapter 4](./04-the-content-delivery-api.md)). Reading them with those two in mind makes the patterns easier to sort.
 
 ## How to read this chapter
 
@@ -92,9 +94,9 @@ This is the book's central thesis, restated by real bugs: cache **busting** acro
 | [#17393](https://github.com/umbraco/Umbraco-CMS/issues/17393) | Publish/unpublish notification handlers read **stale** content, because the notification fires before the cache reflects the change. | **Reported.** No notification cleanly signals "the cache is now consistent"; even `ContentCacheRefresherNotification` can fire early. | Open, reproduced, sprint candidate. Workaround: call `DistributedCache.RefreshContentCache(...)` explicitly, or read inside a fresh scope. |
 | [#8060](https://github.com/umbraco/Umbraco-CMS/issues/8060) | The "Rebuild index" button only rebuilds the admin server's Examine index, not the replicas'. | **Confirmed.** By design: there is no cluster-wide rebuild instruction. | Open, stale, up-for-grabs. Workaround: use a search-as-a-service backend, or schedule rebuilds on every node. |
 
-[#23219](https://github.com/umbraco/Umbraco-CMS/issues/23219) is the clearest cautionary tale in the whole survey. A node quietly stops emitting cache-busting instructions, so editors see their change on the publishing server only, and nothing in the logs says anything is wrong. It is the precise failure the `DistributedCache` and `IServerMessenger` machinery from [chapter 4](./04-cache-busting-and-invalidation.md) exists to prevent — and a reminder that the machinery only helps while it is actually running.
+[#23219](https://github.com/umbraco/Umbraco-CMS/issues/23219) is the clearest cautionary tale in the whole survey. A node quietly stops emitting cache-busting instructions, so editors see their change on the publishing server only, and nothing in the logs says anything is wrong. It is the precise failure the `DistributedCache` and `IServerMessenger` machinery from [chapter 6](./06-cache-busting-and-invalidation.md) exists to prevent — and a reminder that the machinery only helps while it is actually running.
 
-The forum field reports in [chapter 4](./04-cache-busting-and-invalidation.md#field-note-stale-instructions-are-data-too) show the noisier cousin of the same class of problem: old `umbracoCacheInstruction` rows can keep failing after the original environment mistake is gone.[^14-field-instructions]
+The forum field reports in [chapter 6](./06-cache-busting-and-invalidation.md#field-note-stale-instructions-are-data-too) show the noisier cousin of the same class of problem: old `umbracoCacheInstruction` rows can keep failing after the original environment mistake is gone.[^14-field-instructions]
 
 ## Theme 4: HybridCache internals — locking, traversal, and config gaps
 
@@ -107,7 +109,7 @@ These touch the published cache engine itself. This section is a survey conclusi
 | [#17550](https://github.com/umbraco/Umbraco-CMS/issues/17550) | Rapid `IContentTypeService.UpdateAsync` calls deadlock the whole site. | **Reported (HQ hypothesis).** A deadlock between Examine indexing and the cache rebuild, both needing the content-type read lock. **Database-specific**: reproduces on SQLite (where the read lock is nearly a no-op), not on SQL Server. | Open, reproduced. Workaround: throttle the updates. |
 | [#23070](https://github.com/umbraco/Umbraco-CMS/issues/23070) | On sites with 300k+ members, the database cache rebuild is slow and blocks all member changes, and it cannot be disabled. | **Reported.** v13's public `NuCacheContentRepository` (subclassable to skip members) was replaced by an `internal sealed DatabaseCacheRepository`, removing the extension point. | Open. Requested: a settings flag, or a public repository. |
 
-[#20552](https://github.com/umbraco/Umbraco-CMS/issues/20552) is the canonical illustration of a recurring theme in this book: **broad traversal has a cost in the HybridCache world.** Walking the whole content tree no longer reads from a fully in-memory structure; it hydrates and caches each node you touch. The lightweight `I*NavigationQueryService` exists precisely so you can walk structure without paying that price — see [chapter 9](./09-future-hybrid-cache-architecture.md) and [chapter 11](./11-examine-indexes-and-cache-adjacent-querying.md).
+[#20552](https://github.com/umbraco/Umbraco-CMS/issues/20552) is the canonical illustration of a recurring theme in this book: **broad traversal has a cost in the HybridCache world.** Walking the whole content tree no longer reads from a fully in-memory structure; it hydrates and caches each node you touch. The lightweight `I*NavigationQueryService` exists precisely so you can walk structure without paying that price — see [chapter 11](./11-future-hybrid-cache-architecture.md) and [chapter 13](./13-examine-indexes-and-cache-adjacent-querying.md).
 
 ## Theme 5: historical NuCache pain, and why HybridCache exists
 
@@ -118,7 +120,7 @@ These two issues predate HybridCache. They are "before" evidence.
 | [#15634](https://github.com/umbraco/Umbraco-CMS/issues/15634) | "The process cannot access `NuCache.Content.db`" aborts an upgrade. On Azure the temp directory is not accessible to delete the locked file. | **Reported.** The local BPlusTree `.db` files are locked by another process during the upgrade. | Open. Workaround: restart the web app to clear the `.db` files. |
 | [#15809](https://github.com/umbraco/Umbraco-CMS/issues/15809) | NuCache `.db` (de)serialisation allocates **tens of gigabytes** at start-up on large sites (versus roughly 200 MB of files), causing long GC pauses. | **Reported.** Neither the NuCache serialiser nor the underlying `CSharpTest.Net.Collections` library pooled their buffers. | Open. A community pooling pull request, [#15808](https://github.com/umbraco/Umbraco-CMS/pull/15808), was **closed without being merged**, so the underlying cost remains in the NuCache stack. |
 
-Read together, these explain the move to `HybridCache`: local `.db` files that lock during upgrades and balloon memory at start-up are exactly the fragilities a database-backed, `IMemoryCache`/`IDistributedCache`-layered cache was designed to remove. See [chapter 10](./10-nucache-vs-hybrid-cache.md).
+Read together, these explain the move to `HybridCache`: local `.db` files that lock during upgrades and balloon memory at start-up are exactly the fragilities a database-backed, `IMemoryCache`/`IDistributedCache`-layered cache was designed to remove. See [chapter 12](./12-nucache-vs-hybrid-cache.md).
 
 ## The solutions picture
 
@@ -234,23 +236,23 @@ The v17/v18 tracker says the published-content engine (`HybridCache`) is largely
 
 ### Where to go next
 
-- [Chapter 4 - Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md) for the refresher pipeline behind the failures listed here.
-- [Chapter 9 - Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md) for the model shaping these trade-offs.
-- [Chapter 10 - NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md) for historical context on why the architecture changed.
+- [Chapter 6 - Cache Busting and Invalidation](./06-cache-busting-and-invalidation.md) for the refresher pipeline behind the failures listed here.
+- [Chapter 11 - Future Hybrid Cache Architecture](./11-future-hybrid-cache-architecture.md) for the model shaping these trade-offs.
+- [Chapter 12 - NuCache vs Hybrid Cache](./12-nucache-vs-hybrid-cache.md) for historical context on why the architecture changed.
 
 ## Sources
 
-- Issue tracker survey captured 30 June 2026; see [F4 in the appendix](./14-appendix-sources.md#f4-open-cache-issue-survey-v17v18) for the open-issue list, [F5](./14-appendix-sources.md#f5-cache-related-fixes-and-pull-requests) for referenced pull requests, and [F6](./14-appendix-sources.md#f6-closed-cache-issue-survey-v17v18) for the closed-issue sample used in this chapter.
-- Related chapters: [04 - Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md), [09 - Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md), [10 - NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md), [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md).
+- Issue tracker survey captured 30 June 2026; see [F4 in the appendix](./16-appendix-sources.md#f4-open-cache-issue-survey-v17v18) for the open-issue list, [F5](./16-appendix-sources.md#f5-cache-related-fixes-and-pull-requests) for referenced pull requests, and [F6](./16-appendix-sources.md#f6-closed-cache-issue-survey-v17v18) for the closed-issue sample used in this chapter.
+- Related chapters: [04 - Cache Busting and Invalidation](./06-cache-busting-and-invalidation.md), [09 - Future Hybrid Cache Architecture](./11-future-hybrid-cache-architecture.md), [10 - NuCache vs Hybrid Cache](./12-nucache-vs-hybrid-cache.md), [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md).
 
-[^14-survey]: See [F4 in the appendix](./14-appendix-sources.md#f4-open-cache-issue-survey-v17v18). All issues were read in full, including comments, on 30 June 2026.
-[^14-fixes]: See [F5 in the appendix](./14-appendix-sources.md#f5-cache-related-fixes-and-pull-requests). Pull-request merge states were verified against the GitHub API on 30 June 2026.
-[^14-url-upgrade]: See [#21337 in F6](./14-appendix-sources.md#f6-closed-cache-issue-survey-v17v18) and the associated fix [#21379 in F5](./14-appendix-sources.md#f5-cache-related-fixes-and-pull-requests).
-[^14-rebuild-empty]: See [#21882 in F6](./14-appendix-sources.md#f6-closed-cache-issue-survey-v17v18) and the associated fix [#21890 in F5](./14-appendix-sources.md#f5-cache-related-fixes-and-pull-requests).
-[^14-field-instructions]: See [F7 in the appendix](./14-appendix-sources.md#f7-distributed-cache-field-reports-v17).
-[^14-closed]: See [F6 in the appendix](./14-appendix-sources.md#f6-closed-cache-issue-survey-v17v18). Closed-issue sample captured from the GitHub issue search API on 1 July 2026.
-[^14-closed-startup]: Examples in [F6](./14-appendix-sources.md#f6-closed-cache-issue-survey-v17v18): [#22587](https://github.com/umbraco/Umbraco-CMS/issues/22587), [#23001](https://github.com/umbraco/Umbraco-CMS/issues/23001), [#22883](https://github.com/umbraco/Umbraco-CMS/issues/22883), [#21882](https://github.com/umbraco/Umbraco-CMS/issues/21882).
-[^14-closed-distributed]: Examples in [F6](./14-appendix-sources.md#f6-closed-cache-issue-survey-v17v18): [#23106](https://github.com/umbraco/Umbraco-CMS/issues/23106), [#23214](https://github.com/umbraco/Umbraco-CMS/issues/23214), [#22570](https://github.com/umbraco/Umbraco-CMS/issues/22570).
-[^14-closed-performance]: Examples in [F6](./14-appendix-sources.md#f6-closed-cache-issue-survey-v17v18): [#22646](https://github.com/umbraco/Umbraco-CMS/issues/22646), [#22250](https://github.com/umbraco/Umbraco-CMS/issues/22250).
-[^14-closed-patches]: See release labels attached to closed issues in [F6](./14-appendix-sources.md#f6-closed-cache-issue-survey-v17v18), for example `release/17.5.0`, `release/17.6.0`, and `release/18.0.0`.
-[^14-closed-observability]: See [#22933](https://github.com/umbraco/Umbraco-CMS/issues/22933) in [F6](./14-appendix-sources.md#f6-closed-cache-issue-survey-v17v18), closed with `state_reason = not_planned`.
+[^14-survey]: See [F4 in the appendix](./16-appendix-sources.md#f4-open-cache-issue-survey-v17v18). All issues were read in full, including comments, on 30 June 2026.
+[^14-fixes]: See [F5 in the appendix](./16-appendix-sources.md#f5-cache-related-fixes-and-pull-requests). Pull-request merge states were verified against the GitHub API on 30 June 2026.
+[^14-url-upgrade]: See [#21337 in F6](./16-appendix-sources.md#f6-closed-cache-issue-survey-v17v18) and the associated fix [#21379 in F5](./16-appendix-sources.md#f5-cache-related-fixes-and-pull-requests).
+[^14-rebuild-empty]: See [#21882 in F6](./16-appendix-sources.md#f6-closed-cache-issue-survey-v17v18) and the associated fix [#21890 in F5](./16-appendix-sources.md#f5-cache-related-fixes-and-pull-requests).
+[^14-field-instructions]: See [F7 in the appendix](./16-appendix-sources.md#f7-distributed-cache-field-reports-v17).
+[^14-closed]: See [F6 in the appendix](./16-appendix-sources.md#f6-closed-cache-issue-survey-v17v18). Closed-issue sample captured from the GitHub issue search API on 1 July 2026.
+[^14-closed-startup]: Examples in [F6](./16-appendix-sources.md#f6-closed-cache-issue-survey-v17v18): [#22587](https://github.com/umbraco/Umbraco-CMS/issues/22587), [#23001](https://github.com/umbraco/Umbraco-CMS/issues/23001), [#22883](https://github.com/umbraco/Umbraco-CMS/issues/22883), [#21882](https://github.com/umbraco/Umbraco-CMS/issues/21882).
+[^14-closed-distributed]: Examples in [F6](./16-appendix-sources.md#f6-closed-cache-issue-survey-v17v18): [#23106](https://github.com/umbraco/Umbraco-CMS/issues/23106), [#23214](https://github.com/umbraco/Umbraco-CMS/issues/23214), [#22570](https://github.com/umbraco/Umbraco-CMS/issues/22570).
+[^14-closed-performance]: Examples in [F6](./16-appendix-sources.md#f6-closed-cache-issue-survey-v17v18): [#22646](https://github.com/umbraco/Umbraco-CMS/issues/22646), [#22250](https://github.com/umbraco/Umbraco-CMS/issues/22250).
+[^14-closed-patches]: See release labels attached to closed issues in [F6](./16-appendix-sources.md#f6-closed-cache-issue-survey-v17v18), for example `release/17.5.0`, `release/17.6.0`, and `release/18.0.0`.
+[^14-closed-observability]: See [#22933](https://github.com/umbraco/Umbraco-CMS/issues/22933) in [F6](./16-appendix-sources.md#f6-closed-cache-issue-survey-v17v18), closed with `state_reason = not_planned`.

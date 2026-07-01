@@ -1,4 +1,4 @@
-# 11. Examine, Indexes, and Cache-Adjacent Querying
+# 13. Examine, Indexes, and Cache-Adjacent Querying
 
 > **Start here.** This is the "when NOT to reach for a cache" chapter. Examine is a search index, not a cache — but it sits close enough to be worth a chapter, because sometimes the honest fix for a slow feature is a better way to *find* things rather than another layer to *remember* things. You will learn where the line sits, why broad tree traversal is costly in the HybridCache world, and how to pick between an index, a cache, and the published-content APIs.
 
@@ -10,7 +10,9 @@ People often ask:
 
 The best beginner-safe answer is: no, not primarily. Examine is a search index, though it can play a cache-adjacent role because it stores a derived representation of content, so expensive lookups do not have to start from the published tree every time.[^13-examine]
 
-> **Key term — Examine is an index, not a cache.** It stores a derived, searchable copy of your content so you can FIND things fast — closer to a reservation book than to the heat lamp. Reach for it when the hard part is discovery across a big set, not when the hard part is remembering one small computed result.
+> **Key term — Examine is an index, not a cache.** It stores a derived, searchable copy of your content so you can FIND things fast — it is built for discovery across a large set, not for serving a finished response. Reach for it when the hard part is discovery across a big set, not when the hard part is remembering one small computed result.
+
+> **Back to the read model.** A search hit is an id, not a page. `IPublishedContentQuery` closes the loop by resolving that id back to an `IPublishedContent` ([Chapter 2 - The Published Object](./02-the-published-object.md)): the index finds things, the read model still serves them.
 
 That distinction matters more in the HybridCache era.
 
@@ -100,7 +102,18 @@ The Umbraco docs describe Examine management in terms of `indexes` and `searcher
 
 than to a simple in-memory cache entry store.
 
-> **Analogy — the maitre d's reservation book.** Picture the kitchen from the rest of the book: the database is the walk-in fridge, the published-content cache is the prep stations, the output cache is the heat lamp. Examine is none of those. It is the maitre d's reservation book, a box of index cards by the door — not the food itself, but a fast way to look up which table or which dish you need without walking the whole floor. When the hard part is "find the right items across a big set", you flick through the book (Examine). When the hard part is "remember one small computed result", you glance at a station sticky-note (`RuntimeCache`). When you want the actual dish, you ask the pass — the published-content APIs.
+Examine is a search index — a derived, searchable copy of your content used to find the right items across a large set, distinct from the database, the published-content cache, and the output cache. When the hard part is finding the right items across a big set, query Examine. When the hard part is remembering one small computed result, use a `RuntimeCache` entry. When you want the current published representation, call the published-content APIs.
+
+## How Umbraco hands you the index: `IPublishedContentQuery`
+
+Most developers never touch Examine's raw API directly. Umbraco surfaces it through `IPublishedContentQuery`, the front-end query component that replaced the pile of search methods removed from `UmbracoHelper` in v8.[^13-shazwazza-ipcq] It is a thin abstraction *over* Examine: you hand it a term or an Examine query object, and instead of raw `ISearchResults` it hands back strongly-typed `PublishedSearchResult` items, each carrying an `IPublishedContent` and a relevance `Score`.
+
+That shape is the whole chapter in miniature. The index (Examine) finds the matching items; the published-content APIs then give you the current published representation of each one. Two tools, each doing its own job — discovery, then retrieval — rather than one cache pretending to do both.
+
+Two of Shannon's practical notes are worth carrying:
+
+- **Page deliberately.** The `skip`/`take` overloads exist because Lucene paging has quirks; if you skip them you can end up iterating over "possibly tons of search results", which is exactly the broad-materialisation cost this chapter keeps warning about.
+- **Culture is ambient by default.** When variants are enabled the culture parameter defaults to the current culture, and results include that culture's fields plus invariant fields across all documents — no extra configuration needed.
 
 ## When Markus recommends Examine instead of cache
 
@@ -240,7 +253,24 @@ Indexes have their own invalidation and rebuild story.
 
 That is another reason not to call them "just a cache". A cache entry normally has a key, a value, and an expiry or invalidation path. A search index has fields, analysers, providers, storage, searchers, rebuilds, and synchronisation concerns.
 
-The UMB.FYI archive points to a useful Examine field report from 2024: an Examine release addressed index-corruption problems for sites using `SyncedFileSystemDirectoryFactory`, added health checks for main and local indexes, and reduced rebuilding overhead in Azure-style environments.[^13-umbfyi-index-ops] The details belong to Examine rather than Umbraco's published-content cache, but the lesson fits this book perfectly: derived read models are only trustworthy when their refresh and repair paths are understood.
+The clearest primary account of this comes from Shannon Deminick, the creator of Examine. His write-up of the Examine 3.3.0 fix explains an index-corruption bug that hit Umbraco sites using the default `SyncedFileSystemDirectoryFactory`, producing errors like `Lucene.Net.Index.CorruptIndexException: invalid deletion count`.[^13-shazwazza-corruption] The mechanism is worth understanding because it is a caching-shaped problem in disguise:
+
+- The factory keeps two copies of each index: one on Azure's fast local drive (`C:\%temp%`) and one on slower shared network storage. The local copy exists purely so a site can start without rebuilding the whole index when it moves between workers — a performance cache layered over the durable index.
+- The original implementation had no safeguard against corruption in the main (shared) copy, which could arise from misconfiguration, network latency, or a process being killed mid-write.
+- The fix adds health checks on both copies. If the main index is corrupt but the local copy is healthy, it restores main from local; if both are unhealthy, it deletes the main index and lets a rebuild happen; it always syncs main to local afterwards. An optional repair mode exists but is disabled by default because it can lose documents.
+
+The details belong to Examine rather than Umbraco's published-content cache, but the lesson fits this book perfectly: derived read models are only trustworthy when their refresh and repair paths are understood. The same event also surfaces in the UMB.FYI archive as a secondary trail.[^13-umbfyi-index-ops]
+
+### Disabling indexes on front-end servers
+
+Shannon's second operational lesson is about load-balanced setups.[^13-shazwazza-frontend] When each worker rebuilds its Lucene indexes on startup, that rebuild queries the database and takes content locks. In a scaled-out Azure App Service environment where several fresh workers can come online at once, those simultaneous rebuilds can pile up into SQL timeouts.
+
+His guidance splits on whether the front-end actually uses the Examine APIs:
+
+- If it does, move search to a hosted index (his commercial ExamineX, or another provider-backed index) so front-end workers query a shared service instead of rebuilding local indexes.
+- If it does not, disable indexing on those servers: swap the index factory for an in-memory `RAMDirectory` one, set `EnableDefaultEventHandler = false`, and register no-op index populators so nothing tries to fill them.
+
+The caution he adds is the cache-shaped one again: `RAMDirectory` indexes consume memory proportional to index size, so they suit small front-end/replica indexes, not large content servers. That is the same trade-off Kenn Jacobsen flags for in-memory Umbraco Search, reached from a different angle.
 
 ## Field note: Kenn Jacobsen's search providers
 
@@ -282,6 +312,12 @@ When content publishes, the indexer extracts text, chunks it, and converts each 
 The storage backend ships as a database-backed EF Core implementation. SQL Server 2025 uses native `VECTOR_DISTANCE()` functions; older versions fall back to .NET cosine similarity. The storage interface is swappable for external services such as Qdrant, Pinecone, or Azure AI Search — the same provider-agnostic shape as Kenn's Typesense and Elasticsearch providers.
 
 This fits the chapter's decision rule without changing it. If the hard part is discovery across a large content set, reach for an index. Vector search is a different *kind* of index, not a different *type* of tool: the problem is still discovery, not remembering a small computed result.
+
+## Field note: Shannon Deminick's ExamineX and hosted indexes
+
+Examine's own creator maintains a commercial provider, ExamineX, that swaps Examine's local Lucene storage for Azure AI Search behind the same `Examine` interfaces.[^13-shazwazza-examinex] Because it implements the standard interface, code written against `IPublishedContentQuery` or Examine's searchers keeps working unchanged — the index just lives in a hosted service instead of on the worker's disk.
+
+That places it alongside Kenn Jacobsen's Typesense, Elasticsearch, Algolia, and PostgreSQL providers and Matt Brailsford's vector search: the same provider-agnostic pattern, where the published content still originates in Umbraco but discovery is answered by a derived index owned elsewhere. It also directly solves the front-end rebuild problem above — a hosted index has nothing to rebuild on worker startup. Beyond storage, ExamineX layers on Azure AI Search features such as the typeahead *suggester* API, a reminder that once discovery moves to a dedicated engine you inherit that engine's capabilities as well as its operational model.
 
 ## Example: adding a field to an index
 
@@ -340,10 +376,10 @@ If you want one clean sentence to reuse elsewhere, this is probably it:
 
 ### Where to go next
 
-- For the internal published-content cache story, see [03 - Published Content Cache, AppCaches, and Load Balancing](./03-published-cache-and-load-balancing.md).
-- For the practical query-strategy warning from the HybridCache talk, see [06 - Cache Settings, Talks, and Field Notes](./06-cache-settings-talks-and-field-notes.md).
-- For the tiny custom cache example using `RuntimeCache`, see [07 - Small Local Cache Example with Tags](./07-small-local-cache-example-with-tags.md).
-- For Deploy's effect on index refresh, see [05 - HQ Extensions and Cache](./05-hq-extensions-and-cache.md).
+- For the internal published-content cache story, see [03 - Published Content Cache, AppCaches, and Load Balancing](./05-published-cache-and-load-balancing.md).
+- For the practical query-strategy warning from the HybridCache talk, see [06 - Cache Settings, Talks, and Field Notes](./08-cache-settings-talks-and-field-notes.md).
+- For the tiny custom cache example using `RuntimeCache`, see [07 - Small Local Cache Example with Tags](./09-small-local-cache-example-with-tags.md).
+- For Deploy's effect on index refresh, see [05 - HQ Extensions and Cache](./07-hq-extensions-and-cache.md).
 
 ## Sources
 
@@ -354,13 +390,17 @@ If you want one clean sentence to reuse elsewhere, this is probably it:
   - [Hybrid Cache förändrar allt — Umbraco Kalaset slides (PDF)](https://www.umbracokalaset.se/media/ccvhwzvs/hybrid-cache-forandrar-allt.pdf)
   - [Examine ISearcher API](https://shazwazza.github.io/Examine/api/Examine.ISearcher.html)
   - [UMB.FYI archive](https://umb.fyi/archive)
-  - [Kenn Jacobsen's public Umbraco repository field notes](./14-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes)
+  - [Kenn Jacobsen's public Umbraco repository field notes](./16-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes)
 
-[^13-examine]: See [U15](./14-appendix-sources.md#u15-examine-overview), [U16](./14-appendix-sources.md#u16-examine-management), and [U17](./14-appendix-sources.md#u17-examine-isearcher-api).
-[^13-searchers]: See [U16](./14-appendix-sources.md#u16-examine-management) and [U17](./14-appendix-sources.md#u17-examine-isearcher-api).
-[^13-talk]: See [T2](./14-appendix-sources.md#t2-hybrid-cache-forandrar-allt-pdf).
-[^13-umbfyi]: See [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the entries for 27 November 2024, 10 June 2026, and 1 July 2026.
-[^13-umbfyi-search]: See [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the entries for 15 January 2025, 3 September 2025, 10 September 2025, 17 September 2025, 27 May 2026, and 1 July 2026.
-[^13-umbfyi-index-ops]: See [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the entries for 7 August 2024 and 28 August 2024.
-[^13-kjac-search]: See [F10](./14-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes), especially the Umbraco Search providers, `NoCode.DeliveryApi`, `UmbracoSearchDemo`, and `UmbracoSearchInMemory`.
-[^13-brailsford-ai-search]: See [F11](./14-appendix-sources.md#f11-matt-brailsford-umbraco-ai-search).
+[^13-examine]: See [U15](./16-appendix-sources.md#u15-examine-overview), [U16](./16-appendix-sources.md#u16-examine-management), and [U17](./16-appendix-sources.md#u17-examine-isearcher-api).
+[^13-searchers]: See [U16](./16-appendix-sources.md#u16-examine-management) and [U17](./16-appendix-sources.md#u17-examine-isearcher-api).
+[^13-talk]: See [T2](./16-appendix-sources.md#t2-hybrid-cache-forandrar-allt-pdf).
+[^13-umbfyi]: See [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the entries for 27 November 2024, 10 June 2026, and 1 July 2026.
+[^13-umbfyi-search]: See [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the entries for 15 January 2025, 3 September 2025, 10 September 2025, 17 September 2025, 27 May 2026, and 1 July 2026.
+[^13-umbfyi-index-ops]: See [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the entries for 7 August 2024 and 28 August 2024.
+[^13-kjac-search]: See [F10](./16-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes), especially the Umbraco Search providers, `NoCode.DeliveryApi`, `UmbracoSearchDemo`, and `UmbracoSearchInMemory`.
+[^13-brailsford-ai-search]: See [F11](./16-appendix-sources.md#f11-matt-brailsford-umbraco-ai-search).
+[^13-shazwazza-corruption]: See [F12](./16-appendix-sources.md#f12-shannon-deminick-examine-field-notes), "An Examine fix for Umbraco index corruption".
+[^13-shazwazza-frontend]: See [F12](./16-appendix-sources.md#f12-shannon-deminick-examine-field-notes), "Can I disable Examine indexes on Umbraco front-end servers?".
+[^13-shazwazza-ipcq]: See [F12](./16-appendix-sources.md#f12-shannon-deminick-examine-field-notes), "Searching with IPublishedContentQuery in Umbraco".
+[^13-shazwazza-examinex]: See [F12](./16-appendix-sources.md#f12-shannon-deminick-examine-field-notes), "Configuring a Suggester with ExamineX and Azure AI Search".

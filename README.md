@@ -24,25 +24,27 @@ Use the skill when you want an AI agent to help debug real Umbraco cache symptom
 
 - Primary focus: Umbraco 17.5.1 code and Umbraco 17.latest documentation.
 - Secondary focus: useful and relevant changes observed in Umbraco 18.0.2 and `main`.
-- Canonical source register: [14 - Appendix: Sources](./book/14-appendix-sources.md).
+- Canonical source register: [16 - Appendix: Sources](./book/16-appendix-sources.md).
 
 ## Chapters
 
 - [01 - The Big Picture](./book/01-the-big-picture.md)
-- [02 - Website Output Caching](./book/02-website-output-caching.md)
-- [03 - Published Content Cache, AppCaches, and Load Balancing](./book/03-published-cache-and-load-balancing.md)
-- [04 - Cache Busting and Invalidation](./book/04-cache-busting-and-invalidation.md)
-- [05 - HQ Extensions and Cache](./book/05-hq-extensions-and-cache.md)
-- [06 - Cache Settings, Talks, and Field Notes](./book/06-cache-settings-talks-and-field-notes.md)
-- [07 - Small Local Cache Example with Tags](./book/07-small-local-cache-example-with-tags.md)
-- [08 - Storage Providers and Media Caching](./book/08-storage-providers-and-media-caching.md)
-- [09 - Future Hybrid Cache Architecture](./book/09-future-hybrid-cache-architecture.md)
-- [10 - NuCache vs Hybrid Cache](./book/10-nucache-vs-hybrid-cache.md)
-- [11 - Examine, Indexes, and Cache-Adjacent Querying](./book/11-examine-indexes-and-cache-adjacent-querying.md)
-- [12 - Lessons from the Issue Tracker](./book/12-lessons-from-the-issue-tracker.md)
-- [13 - Reading the Cache Code](./book/13-reading-the-cache-code.md)
-- [14 - Appendix: Sources](./book/14-appendix-sources.md)
-- [15 - Appendix: UMB.FYI Archive Notes for Cache and Index Topics](./book/15-appendix-umbfyi-archive-notes.md)
+- [02 - The Published Object (`IPublishedContent`)](./book/02-the-published-object.md)
+- [03 - Website Output Caching](./book/03-website-output-caching.md)
+- [04 - The Content Delivery API](./book/04-the-content-delivery-api.md)
+- [05 - Published Content Cache, AppCaches, and Load Balancing](./book/05-published-cache-and-load-balancing.md)
+- [06 - Cache Busting and Invalidation](./book/06-cache-busting-and-invalidation.md)
+- [07 - HQ Extensions and Cache](./book/07-hq-extensions-and-cache.md)
+- [08 - Cache Settings, Talks, and Field Notes](./book/08-cache-settings-talks-and-field-notes.md)
+- [09 - Small Local Cache Example with Tags](./book/09-small-local-cache-example-with-tags.md)
+- [10 - Storage Providers and Media Caching](./book/10-storage-providers-and-media-caching.md)
+- [11 - Future Hybrid Cache Architecture](./book/11-future-hybrid-cache-architecture.md)
+- [12 - NuCache vs Hybrid Cache](./book/12-nucache-vs-hybrid-cache.md)
+- [13 - Examine, Indexes, and Cache-Adjacent Querying](./book/13-examine-indexes-and-cache-adjacent-querying.md)
+- [14 - Lessons from the Issue Tracker](./book/14-lessons-from-the-issue-tracker.md)
+- [15 - Reading the Cache Code](./book/15-reading-the-cache-code.md)
+- [16 - Appendix: Sources](./book/16-appendix-sources.md)
+- [17 - Appendix: UMB.FYI Archive Notes for Cache and Index Topics](./book/17-appendix-umbfyi-archive-notes.md)
 
 ## PDF Export Note (Large Graphs)
 

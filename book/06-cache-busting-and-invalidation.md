@@ -1,4 +1,4 @@
-# 04. Cache Busting and Invalidation
+# 06. Cache Busting and Invalidation
 
 > **Start here.** This is the heart of the book. Storing data quickly is the easy half; deciding *when to throw it away* — across every cache layer and every server — is the half that decides whether your site can be trusted. By the end you will know what a single publish actually busts, how the different "refresh types" behave, and why invalidation, not storage, is the real architecture.
 
@@ -7,6 +7,8 @@ If cache creation is the easy half, invalidation is the half that decides whethe
 This chapter is the real centre of the Umbraco caching story.
 
 The key theme of this chapter is coordination: when content changes, refreshers and `DistributedCache` ensure every server invalidates the same stale state.
+
+> **Serving the read model.** The two output caches this chapter busts hold *projections* of `IPublishedContent` — HTML ([Chapter 3](./03-website-output-caching.md)) and JSON ([Chapter 4 - The Content Delivery API](./04-the-content-delivery-api.md)). The CDA's surgical tag- and relation-based eviction is worked through in detail in Chapter 4; this chapter is the wider choreography that drives it, right out to the edge.
 
 ## The main idea
 
@@ -457,7 +459,7 @@ These three busting paths share one spine — the cache-refresher notification �
 
 The key insight: a normal publish drives the refresher pipeline directly, Deploy can batch the work and emit cache-refresher notifications after the operation, and output-cache eviction is a listener sitting on the same notifications rather than a separate mechanism.
 
-For the Deploy specifics, see [Chapter 5](./05-hq-extensions-and-cache.md). For output caching itself, see [Chapter 2](./02-website-output-caching.md).
+For the Deploy specifics, see [Chapter 7](./07-hq-extensions-and-cache.md). For output caching itself, see [Chapter 3](./03-website-output-caching.md).
 
 ## Beginner checklist for custom code
 
@@ -484,8 +486,8 @@ Umbraco caching works because it is aggressive about invalidation *choreography*
 
 ### Where to go next
 
-- [Chapter 5 - HQ Extensions and Cache](./05-hq-extensions-and-cache.md) — how Deploy deliberately changes this busting story.
-- [Chapter 7 - Small Local Cache Example with Tags](./07-small-local-cache-example-with-tags.md) — the smallest possible fill-and-bust loop, in your own code.
+- [Chapter 7 - HQ Extensions and Cache](./07-hq-extensions-and-cache.md) — how Deploy deliberately changes this busting story.
+- [Chapter 9 - Small Local Cache Example with Tags](./09-small-local-cache-example-with-tags.md) — the smallest possible fill-and-bust loop, in your own code.
 
 ## Sources
 
@@ -501,10 +503,10 @@ Umbraco caching works because it is aggressive about invalidation *choreography*
   - `umbraco-v17/src/Umbraco.Web.Website/Caching/WebsiteMemberOutputCacheEvictionHandler.cs`
   - `umbraco-v18/src/Umbraco.Web.Website/Caching/WebsiteElementOutputCacheEvictionHandler.cs`
 
-[^04-core]: See [C7 in the appendix](./14-appendix-sources.md#c7-core-cache-types-and-refreshers) and [U6](./14-appendix-sources.md#u6-server-side-extensions-cache-docs).
-[^04-refresher]: See [C7](./14-appendix-sources.md#c7-core-cache-types-and-refreshers) and [C6](./14-appendix-sources.md#c6-website-output-cache-implementation).
-[^04-worked-trace]: See [C7](./14-appendix-sources.md#c7-core-cache-types-and-refreshers), [C6](./14-appendix-sources.md#c6-website-output-cache-implementation), and [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main). The GUID values in the trace are illustrative sample keys, not constants from Umbraco.
-[^04-field-instructions]: See [F7 in the appendix](./14-appendix-sources.md#f7-distributed-cache-field-reports-v17).
-[^04-24days-edge]: See [F9 in the appendix](./14-appendix-sources.md#f9-24days-caching-field-notes) for the 24days cache-busting and CDN field notes. These articles are historical community sources, not current v17 implementation sources.
-[^04-kjac-edge]: See [F10 in the appendix](./14-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes). These repositories are community and package field examples, not primary Umbraco CMS implementation sources.
-[^04-custom-refresher]: See [C7](./14-appendix-sources.md#c7-core-cache-types-and-refreshers), [C11](./14-appendix-sources.md#c11-icacherefresher-interface-path-v17), and [C12](./14-appendix-sources.md#c12-distributedcache-implementation-path-v17).
+[^04-core]: See [C7 in the appendix](./16-appendix-sources.md#c7-core-cache-types-and-refreshers) and [U6](./16-appendix-sources.md#u6-server-side-extensions-cache-docs).
+[^04-refresher]: See [C7](./16-appendix-sources.md#c7-core-cache-types-and-refreshers) and [C6](./16-appendix-sources.md#c6-website-output-cache-implementation).
+[^04-worked-trace]: See [C7](./16-appendix-sources.md#c7-core-cache-types-and-refreshers), [C6](./16-appendix-sources.md#c6-website-output-cache-implementation), and [C4](./16-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main). The GUID values in the trace are illustrative sample keys, not constants from Umbraco.
+[^04-field-instructions]: See [F7 in the appendix](./16-appendix-sources.md#f7-distributed-cache-field-reports-v17).
+[^04-24days-edge]: See [F9 in the appendix](./16-appendix-sources.md#f9-24days-caching-field-notes) for the 24days cache-busting and CDN field notes. These articles are historical community sources, not current v17 implementation sources.
+[^04-kjac-edge]: See [F10 in the appendix](./16-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes). These repositories are community and package field examples, not primary Umbraco CMS implementation sources.
+[^04-custom-refresher]: See [C7](./16-appendix-sources.md#c7-core-cache-types-and-refreshers), [C11](./16-appendix-sources.md#c11-icacherefresher-interface-path-v17), and [C12](./16-appendix-sources.md#c12-distributedcache-implementation-path-v17).

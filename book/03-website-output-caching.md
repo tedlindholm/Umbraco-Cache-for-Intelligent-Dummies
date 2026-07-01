@@ -1,4 +1,4 @@
-# 02. Website Output Caching
+# 03. Website Output Caching
 
 > **Start here.** This chapter covers website output caching for server-rendered sites. If your project renders HTML through Razor views, this cache lets Umbraco return finished pages without re-running the full rendering pipeline on every request. By the end you will know how to enable it, what makes a request non-cacheable, and how eviction keeps cached pages correct.
 
@@ -9,6 +9,8 @@ This is the cache most people mean when they say:
 In Umbraco 17, the answer is yes.[^02-output]
 
 In [Chapter 1](./01-the-big-picture.md), output caching is introduced as a separate cache family. This chapter focuses on the Razor HTML path. (The headless Content Delivery API uses a similar output-caching pattern for JSON.)
+
+> **Serving the read model.** Website output caching stores the HTML rendered from `IPublishedContent` ([Chapter 2 - The Published Object](./02-the-published-object.md)). It is the sibling of the Content Delivery API's JSON output cache ([Chapter 4](./04-the-content-delivery-api.md)): the same store-the-response idea, applied to a different projection of the same object.
 
 ## Plain-English definition
 
@@ -217,6 +219,7 @@ Imagine the homepage renders a latest-news block. The homepage should be evicted
 
 ```csharp
 using Umbraco.Cms.Core.Cache;
+using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Composing;
@@ -245,11 +248,20 @@ public class LatestNewsOutputCacheEvictionProvider : IWebsiteOutputCacheEviction
     OutputCacheContentChangedContext context,
     CancellationToken cancellationToken = default)
   {
-    var changedContent = _contentService.GetById(context.ContentId);
+    // Look the item up by its key. On publish, unpublish, save, or move-to-recycle-bin
+    // the content still exists, so we can confirm its type. On a hard delete the row is
+    // already gone and GetById returns null.
+    IContent? changedContent = _contentService.GetById(context.ContentKey);
 
-    IEnumerable<string> tags = changedContent?.ContentType.Alias == "newsArticle"
-      ? ["latest-news"]
-      : [];
+    // Evict when a newsArticle changed, and also when the item can no longer be found:
+    // a deleted article must not keep living in the homepage's cached output. That
+    // fallback over-evicts on unrelated hard deletes, but deletes are rare and a stale
+    // homepage is the worse outcome.
+    bool affectsLatestNews =
+      changedContent is null ||
+      changedContent.ContentType.Alias == "newsArticle";
+
+    IEnumerable<string> tags = affectsLatestNews ? ["latest-news"] : [];
 
     return Task.FromResult(tags);
   }
@@ -266,6 +278,35 @@ public class LatestNewsOutputCacheComposer : IComposer
 ```
 
 The important idea is not the tag name. It is that cached output should be tagged with the dependencies it actually renders, then evicted by those same dependency tags when the source changes.
+
+Delete is the case beginners forget, because there are two different paths.
+
+The backoffice tree "Delete" first moves an item to the recycle bin. That is not literally an unpublish in the v17 source; `MoveToRecycleBin()` says trashing is equivalent to moving the item under an unpublished node, so the content is masked rather than unpublished. For output-cache eviction, the important part is that the custom eviction provider still runs while the content exists and can confirm its type.
+
+A permanent delete is different. Emptying the recycle bin, or calling `Delete()` programmatically, fires the eviction with the content already gone. At that point `GetById` returns null and the type can no longer be checked.
+
+<div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
+
+```mermaid
+flowchart TD
+  A["Editor chooses Delete in tree"] --> B["MoveToRecycleBin()"]
+  B --> C["Content still exists\nTrashed/masked, not literally unpublished"]
+  C --> D["ContentCacheRefresherNotification"]
+  D --> E["Custom eviction provider runs"]
+  E --> F["GetById(context.ContentKey) finds content\nType can be checked"]
+
+  G["Empty recycle bin\nor programmatic Delete()"] --> H["Content row is deleted"]
+  H --> I["ContentCacheRefresherNotification"]
+  I --> J["Custom eviction provider runs"]
+  J --> K["GetById(context.ContentKey) returns null\nType cannot be checked"]
+
+  F --> L["Evict latest-news only for newsArticle"]
+  K --> M["Evict latest-news conservatively"]
+```
+
+</div>
+
+The example handles both paths by evicting `latest-news` whenever the changed item is a `newsArticle` *or* can no longer be resolved. Evicting on an unresolvable change is deliberately conservative: it is safer for a derived surface to rebuild once too often than to keep rendering an item that no longer exists.
 
 ## Debugging tips
 
@@ -318,8 +359,8 @@ That is a clue that block and element dependencies are becoming more first-class
 
 ### Where to go next
 
-- [Chapter 4 - Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md) — how the "evict at the right moment" machinery works across every cache.
-- [Chapter 3 - Published Content Cache, AppCaches, and Load Balancing](./03-published-cache-and-load-balancing.md) — the layer that feeds the renderer in the first place.
+- [Chapter 6 - Cache Busting and Invalidation](./06-cache-busting-and-invalidation.md) — how the "evict at the right moment" machinery works across every cache.
+- [Chapter 5 - Published Content Cache, AppCaches, and Load Balancing](./05-published-cache-and-load-balancing.md) — the layer that feeds the renderer in the first place.
 
 ## Sources
 
@@ -332,7 +373,9 @@ That is a clue that block and element dependencies are becoming more first-class
   - `umbraco-v17/src/Umbraco.Web.Website/Caching/DefaultWebsiteOutputCacheRequestFilter.cs`
   - `umbraco-v17/src/Umbraco.Web.Website/Caching/WebsiteDocumentOutputCacheEvictionHandler.cs`
   - `umbraco-v17/src/Umbraco.Web.Website/Caching/RelationOutputCacheEvictionHandlerBase.cs`
+  - `umbraco-v17/src/Umbraco.Core/Services/ContentService.cs`
+  - `umbraco-v17/src/Umbraco.Core/Cache/Refreshers/Implement/ContentCacheRefresher.cs`
   - `umbraco-v18/src/Umbraco.Web.Website/Caching/WebsiteElementOutputCacheEvictionHandler.cs`
 
-[^02-output]: See [U3 in the appendix](./14-appendix-sources.md#u3-website-output-caching) and [C6](./14-appendix-sources.md#c6-website-output-cache-implementation).
-[^02-rules]: See [U3](./14-appendix-sources.md#u3-website-output-caching) and [C6](./14-appendix-sources.md#c6-website-output-cache-implementation).
+[^02-output]: See [U3 in the appendix](./16-appendix-sources.md#u3-website-output-caching) and [C6](./16-appendix-sources.md#c6-website-output-cache-implementation).
+[^02-rules]: See [U3](./16-appendix-sources.md#u3-website-output-caching) and [C6](./16-appendix-sources.md#c6-website-output-cache-implementation).

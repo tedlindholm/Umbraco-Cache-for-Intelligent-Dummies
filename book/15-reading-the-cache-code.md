@@ -1,8 +1,10 @@
-# 13. Reading the Cache Code
+# 15. Reading the Cache Code
 
 Opening the Umbraco source and searching for "cache" returns hundreds of files.
 
 This chapter gives you a map so you can read those files without getting lost.
+
+> **Two anchors to hold.** The published-cache types all exist to produce `IPublishedContent` ([Chapter 2 - The Published Object](./02-the-published-object.md)); the output-cache types exist to store its projections ([Chapter 4](./04-the-content-delivery-api.md)). Keep those two jobs in mind and the type map reads much more easily.
 
 ---
 
@@ -463,9 +465,9 @@ If you split cache *storage* (`IAppCache` and `HybridCache`) from cache *invalid
 
 ### Where to go next
 
-- [Chapter 3 - Published Cache and Load Balancing](./03-published-cache-and-load-balancing.md) for the runtime behaviour behind these types.
-- [Chapter 4 - Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md) for refresher flow and change types.
-- [Chapter 9 - Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md) for deeper internals and design direction.
+- [Chapter 5 - Published Cache and Load Balancing](./05-published-cache-and-load-balancing.md) for the runtime behaviour behind these types.
+- [Chapter 6 - Cache Busting and Invalidation](./06-cache-busting-and-invalidation.md) for refresher flow and change types.
+- [Chapter 11 - Future Hybrid Cache Architecture](./11-future-hybrid-cache-architecture.md) for deeper internals and design direction.
 
 ## Sources
 
@@ -487,8 +489,8 @@ If you split cache *storage* (`IAppCache` and `HybridCache`) from cache *invalid
   - `umbraco-v18/src/Umbraco.Core/PublishedCache/IPublishedElementCache.cs`
   - `umbraco-v18/src/Umbraco.Core/Cache/Refreshers/Implement/ElementCacheRefresher.cs`
 
-[^15-appcache]: See [C9 in the appendix](./14-appendix-sources.md#c9-iappcache-interface-path-v17).
-[^15-appcaches]: See [C10 in the appendix](./14-appendix-sources.md#c10-appcaches-implementation-path-v17).
-[^15-refresher]: See [C11 in the appendix](./14-appendix-sources.md#c11-icacherefresher-interface-path-v17).
-[^15-distributed]: See [C12 in the appendix](./14-appendix-sources.md#c12-distributedcache-implementation-path-v17).
-[^15-docsvc]: See [C13 in the appendix](./14-appendix-sources.md#c13-documentcacheservice-path-v17-hybridcache).
+[^15-appcache]: See [C9 in the appendix](./16-appendix-sources.md#c9-iappcache-interface-path-v17).
+[^15-appcaches]: See [C10 in the appendix](./16-appendix-sources.md#c10-appcaches-implementation-path-v17).
+[^15-refresher]: See [C11 in the appendix](./16-appendix-sources.md#c11-icacherefresher-interface-path-v17).
+[^15-distributed]: See [C12 in the appendix](./16-appendix-sources.md#c12-distributedcache-implementation-path-v17).
+[^15-docsvc]: See [C13 in the appendix](./16-appendix-sources.md#c13-documentcacheservice-path-v17-hybridcache).

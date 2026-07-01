@@ -1,4 +1,4 @@
-# 14. Appendix: Sources
+# 16. Appendix: Sources
 
 This appendix is the book's source register.
 
@@ -36,6 +36,63 @@ The main chapters use footnotes to point here when a claim depends on a specific
 ### M6. `HybridCacheOptions`
 
 - [HybridCacheOptions API](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.caching.hybrid.hybridcacheoptions?view=net-11.0-pp)
+
+### M7. ASP.NET Core in .NET 9 release notes — new `HybridCache` library
+
+- [What's new in ASP.NET Core in .NET 9 — new HybridCache library](https://learn.microsoft.com/en-us/aspnet/core/release-notes/aspnetcore-9.0?view=aspnetcore-10.0#miscellaneous)
+- Establishes the timeline: `HybridCache` was introduced in .NET 9 (shipping in preview) and shipped GA in a later `Microsoft.Extensions.Caching.Hybrid` release. Contains the canonical `IDistributedCache`-boilerplate-vs-`HybridCache` before/after comparison and the `TState` overload.
+
+### M8. `HybridCacheEntryFlags` enum
+
+- [HybridCacheEntryFlags enum API](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.caching.hybrid.hybridcacheentryflags?view=net-11.0-pp)
+- Documents the per-call flags that disable reading or writing of the local (L1) or distributed (L2) layer, bypass the underlying data store, or disable compression: `DisableLocalCacheRead/Write`, `DisableDistributedCacheRead/Write`, `DisableUnderlyingData`, `DisableCompression`.
+
+### M9. `HybridCache` reference source
+
+- [`HybridCache.cs` on source.dot.net](https://source.dot.net/#Microsoft.Extensions.Caching.Abstractions/Hybrid/HybridCache.cs,8c0fe94693d1ac8d)
+- The abstract base class and the default implementation — the ground truth for stampede coalescing and layer coordination.
+
+### M10. `HybridCache` API proposal
+
+- [Hybrid Cache API proposal (GitHub dotnet/aspnetcore issue #54647)](https://github.com/dotnet/aspnetcore/issues/54647)
+- The original design discussion; useful for the "why" behind the API shape.
+
+### M11. `IBufferDistributedCache`
+
+- [IBufferDistributedCache API](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.caching.distributed.ibufferdistributedcache)
+- The `byte[]`-allocation-avoiding L2 interface implemented by the newer Redis, SQL Server, and Postgres cache packages that `HybridCache` can exploit.
+
+### M12. FusionCache as a custom `HybridCache` implementation
+
+- [FusionCache — Microsoft HybridCache integration](https://github.com/ZiggyCreatures/FusionCache/blob/main/docs/MicrosoftHybridCache.md)
+- Evidence that `HybridCache` is an abstract contract with swappable implementations, not a single sealed class.
+
+### M13. .NET diagnostic tools overview
+
+- [.NET diagnostic tools](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/tools-overview)
+- The CLI toolbox: `dotnet-counters`, `dotnet-trace`, `dotnet-monitor`, `dotnet-dump`, `dotnet-gcdump`, `dotnet-stack`.
+
+### M14. `dotnet-counters`
+
+- [Investigate performance counters (dotnet-counters)](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/dotnet-counters)
+- Live counter monitoring; observes both the `EventCounter` and `System.Diagnostics.Metrics` `Meter` APIs.
+
+### M15. Metrics and collection in .NET
+
+- [Built-in metrics in .NET](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/built-in-metrics)
+- [Collect metrics](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics-collection)
+- The `System.Diagnostics.Metrics` API and how to export it (OpenTelemetry, `dotnet-counters`). EF Core's `compiled_query_cache_hits` / `compiled_query_cache_misses` live here too.
+
+### M16. EventSource, EventPipe, and specialized diagnostics
+
+- [Specialized diagnostics (EventSource, EventPipe, dumps)](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/specialized-diagnostics-overview)
+- [Well-known EventCounters in .NET](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/available-counters)
+- The low-level tracing bus underneath the CLI tools, plus the runtime/GC counters useful when a cache is a memory suspect.
+
+### M17. Azure Cache for Redis monitoring data reference
+
+- [Azure Cache for Redis monitoring data reference](https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/monitor-cache-reference#metrics)
+- L2-side metrics — `cachehits`, `cachemisses`, `cachemissrate`, `evictedkeys`, `connectedclients` — exposed through Azure Monitor when Redis is the secondary cache.
 
 ## Umbraco docs
 
@@ -203,6 +260,15 @@ The main chapters use footnotes to point here when a claim depends on a specific
 
 - `umbraco-v17/src/Umbraco.PublishedCache.HybridCache/Services/DocumentCacheService.cs`
 
+### C14. v17 HybridCache registration, serialiser, and service wiring
+
+Verified against a local Umbraco v17 checkout (`.NET 10.0` target) on 1 July 2026:
+
+- `umbraco-v17/src/Umbraco.PublishedCache.HybridCache/DependencyInjection/UmbracoBuilderExtensions.cs` — `AddUmbracoHybridCache`: `AddHybridCache` with `MaximumPayloadBytes = 1024 * 1024 * 100` (100 MB, with an inline comment about languages/blocks exceeding the 1 MB default), `AddSerializer<ContentCacheNode, HybridCacheSerializer>()`, and the `IPublishedContentCache → DocumentCache` / `IPublishedMediaCache → MediaCache` / `IDatabaseCacheRepository → DatabaseCacheRepository` singleton bindings.
+- `umbraco-v17/src/Umbraco.PublishedCache.HybridCache/Extensions/HybridCacheExtensions.cs` — the `TryGetValueAsync<T>` / `ExistsAsync<T>` extensions built on `GetOrCreateAsync` + `RemoveAsync` under a per-key `SemaphoreSlim` (filling the absent `TryGet` on Microsoft's API).
+- `umbraco-v17/src/Umbraco.PublishedCache.HybridCache/Serialization/HybridCacheSerializer.cs` — `IHybridCacheSerializer<ContentCacheNode>` using MessagePack `ContractlessStandardResolver` with `MessagePackCompression.Lz4BlockArray` and `MessagePackSecurity.UntrustedData`.
+- `DocumentCacheService.cs` specifics: `GetCacheKey` (`$"{key}+draft"` for preview), `GenerateTags` / `ContentTypeIdTag` (`"content"` + `$"ct:{contentTypeId}"`, with the negative-entry rationale in the XML doc), and `GetEntryOptions` / `GetSeedEntryOptions` mapping `RemoteCacheDuration`/`LocalCacheDuration`/`SeedCacheDuration` onto `Expiration`/`LocalCacheExpiration`.
+
 ## Storage Providers source
 
 ### S1. `Umbraco.StorageProviders` repository
@@ -274,7 +340,7 @@ The main chapters use footnotes to point here when a claim depends on a specific
 ### F1. Website significantly slower since upgrading from v13 to v16
 
 - [Website significantly slower since upgrading from v13 to v16 (Umbraco forum)](https://forum.umbraco.com/t/website-significantly-slower-since-upgrading-from-v13-to-v16/6049)
-- Specific reply referenced in chapter 6:
+- Specific reply referenced in chapter 8:
   - [Website significantly slower — comment #11](https://forum.umbraco.com/t/website-significantly-slower-since-upgrading-from-v13-to-v16/6049/11)
 
 ### F2. Failed to acquire write lock for id: -333
@@ -287,7 +353,7 @@ The main chapters use footnotes to point here when a claim depends on a specific
 
 ### F4. Open cache issue survey (v17/v18)
 
-Survey backing [chapter 12](./12-lessons-from-the-issue-tracker.md). All issues were read in full, including comments, on 30 June 2026. State is captured as of that date.
+Survey backing [chapter 14](./14-lessons-from-the-issue-tracker.md). All issues were read in full, including comments, on 30 June 2026. State is captured as of that date.
 
 URL and routing cache (`DocumentUrlService`):
 
@@ -337,13 +403,13 @@ Merge states verified against the GitHub API on 30 June 2026.
 
 ### F6. Closed cache issue survey (v17/v18)
 
-Closed cache-issue sample used in [chapter 12](./12-lessons-from-the-issue-tracker.md), captured from GitHub issue search on 1 July 2026.
+Closed cache-issue sample used in [chapter 14](./14-lessons-from-the-issue-tracker.md), captured from GitHub issue search on 1 July 2026.
 
 Query:
 
 - [Umbraco CMS closed issues matching `cache`](https://github.com/umbraco/Umbraco-CMS/issues?q=is%3Aissue%20is%3Aclosed%20cache)
 
-Representative closed issues referenced in chapter 12:
+Representative closed issues referenced in chapter 14:
 
 - [#22587 - Published Content routinely falls out of Memory Cache on startup](https://github.com/umbraco/Umbraco-CMS/issues/22587)
 - [#23001 - Thousands of queries on start](https://github.com/umbraco/Umbraco-CMS/issues/23001)
@@ -359,7 +425,7 @@ Representative closed issues referenced in chapter 12:
 
 ### F7. Distributed cache field reports (v17)
 
-Community reports used as field notes in [chapter 4](./04-cache-busting-and-invalidation.md). These are not primary implementation sources; they are operational examples of how stale distributed-cache instructions surface in real projects.
+Community reports used as field notes in [chapter 6](./06-cache-busting-and-invalidation.md). These are not primary implementation sources; they are operational examples of how stale distributed-cache instructions surface in real projects.
 
 - [U17 - Distributed cache is not updated](https://forum.umbraco.com/t/u17-distributed-cache-is-not-updated/7212/7)
 - [Distributed cache is not updated (U17)](https://forum.umbraco.com/t/distributed-cache-is-not-updated-u17/7358)
@@ -496,7 +562,7 @@ Useful interpretation for the book:
 
 `Umbraco.AI.Search` is a beta add-on that replaces keyword-based Examine/Lucene search with semantic vector search. The indexer implements `IIndexer` and `ISearcher` from the `Umbraco.Cms.Search` framework, making it a provider-agnostic implementation in the same architectural position as Kenn Jacobsen's Typesense, Elasticsearch, Algolia, and PostgreSQL providers.
 
-Key technical details relevant to Chapter 11:
+Key technical details relevant to Chapter 13:
 
 - at publish time, content is extracted, chunked, and converted to high-dimensional vectors via an embedding model
 - at query time the same model embeds the search phrase; cosine similarity then finds the nearest content vectors
@@ -504,4 +570,32 @@ Key technical details relevant to Chapter 11:
 - the storage interface is designed to be swapped for external services (Qdrant, Pinecone, Azure AI Search)
 - culture-aware indexing, access-protection enforcement at query time, and AI agent integration are included
 
-Cited in Chapter 11 as a field example of the same "provider-agnostic index" architecture applied to a semantic/vector discovery model rather than keyword frequency — a different kind of index, not a different type of tool.
+Cited in Chapter 13 as a field example of the same "provider-agnostic index" architecture applied to a semantic/vector discovery model rather than keyword frequency — a different kind of index, not a different type of tool.
+
+### F12. Shannon Deminick — Examine field notes
+
+Shannon Deminick (Shazwazza) is the creator and maintainer of Examine, an Umbraco MVP, and a long-standing Umbraco HQ contributor. His blog is a primary source on Examine internals and operations. Posts checked from [shazwazza.com](https://shazwazza.com/) on 1 July 2026. These are index/search operational sources; they are cache-adjacent in the sense used throughout Chapter 13.
+
+- [An Examine fix for Umbraco index corruption](https://shazwazza.com/post/an-examine-fix-for-umbraco-index-corruption/) — 31 July 2024. Documents the Examine 3.3.0 fix for `Lucene.Net.Index.CorruptIndexException` on sites using the default `SyncedFileSystemDirectoryFactory`. Root cause: the factory syncs an index between Azure's fast local drive (`C:\%temp%`) and slower shared network storage, with no safeguard against corruption in the main copy (misconfiguration, network latency, or a killed process). The fix adds health checks — restore main from local if only main is corrupt; delete and rebuild if both are unhealthy; always sync main to local afterwards. An optional repair mode ships disabled by default because it can lose documents. This is the primary source behind the corruption trail also noted via UMB.FYI in [F8](#f8-umbfyi-cache-and-search-archive-trail).
+- [Can I disable Examine indexes on Umbraco front-end servers?](https://shazwazza.com/post/can-i-disable-examine-indexes-on-umbraco-front-end-servers/) — 2023. In load-balanced Azure App Service setups, each worker rebuilds Lucene indexes on startup, taking database content locks that can cause SQL timeouts when many workers start at once. Recommends hosted search (ExamineX) if the front-end uses Examine APIs, or disabling indexing otherwise: an in-memory `RAMDirectory` index factory, `EnableDefaultEventHandler = false`, and no-op index populators. Warns that `RAMDirectory` memory scales with index size, so it suits front-end/replica servers, not large content servers.
+- [Searching with `IPublishedContentQuery` in Umbraco](https://shazwazza.com/post/searching-with-ipublishedcontentquery-in-umbraco/) — explains `IPublishedContentQuery`, the front-end query component that replaced search methods removed from `UmbracoHelper` in v8. It wraps Examine and returns strongly-typed `PublishedSearchResult` items (an `IPublishedContent` plus a relevance `Score`) rather than raw `ISearchResults`. Notes the `skip`/`take` paging overloads (to avoid iterating over very large result sets) and that culture defaults to the ambient culture with invariant fields included.
+- [Configuring a Suggester with ExamineX and Azure AI Search](https://shazwazza.com/post/configuring-a-suggester-with-examinex-and-azure-ai-search/) — 1 May 2024. ExamineX is Shannon's commercial provider that swaps Examine's local Lucene storage for Azure AI Search behind the standard Examine interfaces, so existing `IPublishedContentQuery`/searcher code keeps working. The post demonstrates the Azure AI Search typeahead *suggester* API (configured via the `CreatingOrUpdatingIndex` event; requires fields on the Standard Analyzer).
+
+Cited in Chapter 13 for the operational index gotchas (corruption/repair and front-end rebuild costs), for how Umbraco surfaces Examine via `IPublishedContentQuery`, and as another provider-agnostic hosted-index example alongside [F10](#f10-kenn-jacobsen-umbraco-repository-field-notes) and [F11](#f11-matt-brailsford-umbraco-ai-search).
+
+### F13. Delivery API empty-response and index-reset field reports
+
+Backing the "empty API responses right after startup" troubleshooting note in [chapter 8](./08-cache-settings-talks-and-field-notes.md). These GitHub issues and forum threads were located through web search and read from their public pages on 1 July 2026; unlike [F4](#f4-open-cache-issue-survey-v17v18) and [F6](#f6-closed-cache-issue-survey-v17v18), they were not exhaustively re-read comment by comment, so treat the one-line summaries as pointers rather than verified reproductions. They matter because they show a repeated theme: the `DeliveryApiContentIndex` can look healthy in Examine Management and still serve an empty response, so "rebuild the index" is both the first-time setup step and a recurring operational remedy.
+
+Where a cause or fix is recorded on the thread it is noted below; two of these are diagnosed, one is fixed, and two remain undiagnosed.
+
+- [#22883 - Content Delivery API returns inconsistent/empty results on startup](https://github.com/umbraco/Umbraco-CMS/issues/22883) - **cause (diagnosed):** the `RebuildOnStartupHandler` runs on `UmbracoRequestBeginNotification` and does not `await` the rebuild, so Delivery API requests can be served before the index has finished building — a cold-boot race. **Proposed solution:** make the handler async on `UmbracoApplicationStartingNotification` and block startup on `RebuildIndexesAsync()`. Open at the time of writing, sprint candidate for v17.6.0 (AB#68826); also listed in [F6](#f6-closed-cache-issue-survey-v17v18). This is the sharpest "empty right after startup" cause in the set.
+- [#8060 - Index rebuild does not propagate to front-end servers](https://github.com/umbraco/Umbraco-CMS/issues/8060) - **cause (diagnosed by reporter):** a rebuild triggered from Examine Management is a *local* operation and is not broadcast to other servers, unlike a publish, so front-end/replica nodes keep the old or empty index. A normal publish *does* update the front-end index; only the manual bulk rebuild fails to travel. **Solution/workaround:** rebuild (or delete to force regeneration) on each server, with per-server temp storage. Open/stale; also listed under distributed invalidation in [F4](#f4-open-cache-issue-survey-v17v18).
+- [#20370 - Publishing items in bulk programmatically does not properly update the Delivery API content index](https://github.com/umbraco/Umbraco-CMS/issues/20370) - **cause:** `IContentService.PublishBranch()` did not raise the indexing notifications that single-item publish raises, so bulk-published items stayed "unpublished" in the index while core content showed them as published. **Fixed** by [PR #20462](https://github.com/umbraco/Umbraco-CMS/pull/20462) (release/16.4.0 and release/17.0.0); before the fix, rebuild the index or re-save the items. A concrete example of a derived surface with its own update path, as discussed in [chapters 6](./06-cache-busting-and-invalidation.md) and [13](./13-examine-indexes-and-cache-adjacent-querying.md).
+- [#21716 - Content Delivery API intermittently returns 0 items while the index is populated (17.1.0, Azure Web Apps, multi-instance)](https://github.com/umbraco/Umbraco-CMS/issues/21716) - no exceptions logged, `umbracoLastSynced` correct, index healthy in the backoffice; rebuilding the index on the Content Management instance restores results within minutes. **Cause undetermined** (assigned, triage-tagged 17.3.0, AB#65102); the reporter suspects multi-instance Examine/Lucene synchronisation. Complements [#22883](https://github.com/umbraco/Umbraco-CMS/issues/22883) and [#8060](https://github.com/umbraco/Umbraco-CMS/issues/8060).
+- [#17209 - `DeliveryApiContentIndex` gets reset](https://github.com/umbraco/Umbraco-CMS/issues/17209) - the index intermittently drops to a document count of 0 (reported on v13, "a few times a month"), correlated with content editors updating items. **Cause undetermined; no linked fix.** Manual rebuild restores it.
+- [#14354 - Delivery API content endpoint always returns empty response](https://github.com/umbraco/Umbraco-CMS/issues/14354) - the classic first-run case: the API is enabled but the index has not been rebuilt, so the multiple-items endpoint returns nothing. **Solution:** rebuild `DeliveryApiContentIndex` once.
+- [Forum: "the delivery api is not enabled, no indexing will be performed for the delivery api content index"](https://our.umbraco.com/forum/using-umbraco-and-getting-started/113733-the-delivery-api-is-not-enabled-no-indexing-will-performed-for-the-delivery-api-content-index) - the log warning that appears when `Umbraco:CMS:DeliveryApi:Enabled` is not set; the index is not maintained until the API is enabled.
+- [Forum: DeliveryApiContentIndex "Rebuild" greyed out](https://our.umbraco.com/forum/using-umbraco-and-getting-started/112262-content-delivery-api-deliveryapicontentindex-rebuild-greyed-out) - the rebuild button is disabled when the Delivery API is not enabled in configuration; enabling it (`Enabled: true`, optionally `PublicAccess: true`) re-enables the button.
+
+The database-cache side of the same troubleshooting note is already covered elsewhere in this appendix: [#21882](https://github.com/umbraco/Umbraco-CMS/issues/21882) (rebuilding the database cache from an empty `cmsContentNu` produced empty property values) in [F6](#f6-closed-cache-issue-survey-v17v18), fixed by [PR #21890](https://github.com/umbraco/Umbraco-CMS/pull/21890) (merged into v17.2.1) in [F5](#f5-cache-related-fixes-and-pull-requests). A reader on v17.2.1 or later — including the v17.5 baseline of this book — should not hit that specific regression.

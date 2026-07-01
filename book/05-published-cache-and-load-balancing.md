@@ -1,4 +1,4 @@
-# 03. Published Content Cache, AppCaches, and Load Balancing
+# 05. Published Content Cache, AppCaches, and Load Balancing
 
 > **Start here.** This is the deep dive on the cache path Umbraco uses whenever it loads published content. We will break it into its three layers, show why `AppCaches` exists separately for your own data, and finish with the key load-balanced question: how do multiple servers stay in sync?
 
@@ -28,6 +28,8 @@ flowchart TD
 In `DocumentCacheService`, Umbraco keeps a local concurrent dictionary of already built `IPublishedContent` objects.[^03-l0]
 
 That is the fastest path.
+
+> **Follows the read model.** This "already built" object is the materialised `IPublishedContent` from [Chapter 2 - The Published Object](./02-the-published-object.md). This layer exists precisely to avoid re-materialising it: the read model, kept hot.
 
 In the newer `main` branch architecture, this pattern also exists explicitly for elements, not only documents.
 
@@ -170,7 +172,7 @@ The deck makes this change very concrete: traversal and filtering patterns that 
 
 That does not always mean "add another cache".
 
-Sometimes it means "use an index instead of traversal", which is exactly where Examine fits. See [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md) for the full comparison.
+Sometimes it means "use an index instead of traversal", which is exactly where Examine fits. See [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md) for the full comparison.
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
@@ -273,7 +275,7 @@ Why that matters:
 
 That is especially relevant for modern Umbraco builds using blocks heavily.
 
-For the fuller future direction, see [09 - Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md).
+For the fuller future direction, see [09 - Future Hybrid Cache Architecture](./11-future-hybrid-cache-architecture.md).
 
 ## The practical performance trade-off
 
@@ -282,7 +284,7 @@ The HybridCache presentation material gives a useful warning for beginners:
 - lower memory usage and faster startup are wins
 - but tree traversal and broad in-memory filtering patterns can become more expensive
 
-> **Gotcha — traversal is not free any more.** Code like `.Children().Where(...)` deserves more suspicion than it did in the old "keep everything hot" world: walking the tree can now hydrate and cache every node you touch. When the hard part is *finding* items, prefer an index (see [Chapter 11](./11-examine-indexes-and-cache-adjacent-querying.md)); when it is *recomputing* a small result, prefer `RuntimeCache`.
+> **Gotcha — traversal is not free any more.** Code like `.Children().Where(...)` deserves more suspicion than it did in the old "keep everything hot" world: walking the tree can now hydrate and cache every node you touch. When the hard part is *finding* items, prefer an index (see [Chapter 13](./13-examine-indexes-and-cache-adjacent-querying.md)); when it is *recomputing* a small result, prefer `RuntimeCache`.
 
 ## Cost moved, not vanished
 
@@ -329,9 +331,9 @@ quadrantChart
 
 ### Where to go next
 
-- [Chapter 4 - Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md) — the invalidation choreography, in full.
-- [Chapter 11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md) — when *not* to solve a problem with a cache.
-- [Chapter 9 - Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md) — where this architecture is heading.
+- [Chapter 6 - Cache Busting and Invalidation](./06-cache-busting-and-invalidation.md) — the invalidation choreography, in full.
+- [Chapter 13 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md) — when *not* to solve a problem with a cache.
+- [Chapter 11 - Future Hybrid Cache Architecture](./11-future-hybrid-cache-architecture.md) — where this architecture is heading.
 
 ## Sources
 
@@ -353,7 +355,7 @@ quadrantChart
   - `umbraco-v17/src/Umbraco.Core/Cache/Refreshers/Implement/ContentCacheRefresher.cs`
   - `umbraco-v18/src/Umbraco.PublishedCache.HybridCache/Services/ElementCacheService.cs`
 
-[^03-l0]: See [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout) and [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main) in the appendix.
-[^03-hybrid]: See [M2](./14-appendix-sources.md#m2-aspnet-core-hybridcache) and [C1](./14-appendix-sources.md#c1-umbraco-17-source-checkout) in the appendix.
-[^03-db]: See [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main) and [C5](./14-appendix-sources.md#c5-claudemd-for-umbracopublishedcachehybridcache) in the appendix.
-[^03-payload]: See [M6](./14-appendix-sources.md#m6-hybridcacheoptions), [U4](./14-appendix-sources.md#u4-cache-settings-for-umbraco-17), and [T1](./14-appendix-sources.md#t1-releasing-hybridcache-into-the-wild-with-umbraco) in the appendix.
+[^03-l0]: See [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout) and [C4](./16-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main) in the appendix.
+[^03-hybrid]: See [M2](./16-appendix-sources.md#m2-aspnet-core-hybridcache) and [C1](./16-appendix-sources.md#c1-umbraco-17-source-checkout) in the appendix.
+[^03-db]: See [C4](./16-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main) and [C5](./16-appendix-sources.md#c5-claudemd-for-umbracopublishedcachehybridcache) in the appendix.
+[^03-payload]: See [M6](./16-appendix-sources.md#m6-hybridcacheoptions), [U4](./16-appendix-sources.md#u4-cache-settings-for-umbraco-17), and [T1](./16-appendix-sources.md#t1-releasing-hybridcache-into-the-wild-with-umbraco) in the appendix.

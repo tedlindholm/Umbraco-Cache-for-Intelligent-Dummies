@@ -1,10 +1,12 @@
-# 08. Storage Providers and Media Caching
+# 10. Storage Providers and Media Caching
 
 > **Start here.** This chapter is about caching the media and files a site serves. That bottleneck differs from the published-content cache covered elsewhere in the book, and it lives in different layers. By the end you will know how `Umbraco.StorageProviders` connects Umbraco to media storage, CDN delivery, and blob-backed image caches, and why none of that is "content cache" in the usual sense.
 
 This chapter is about a different side of caching. Most of this book focuses on the published content cache, cache refreshers, load balancing, and Deploy-related cache busting. `Umbraco.StorageProviders` is not mainly about any of those things — it is mainly about the caching and delivery story for media files.
 
 This chapter focuses on media delivery performance rather than published-content retrieval. The same word "cache" appears in both places, but the moving parts are different.
+
+> **A different object.** A media *item* is `IPublishedContent` ([Chapter 2 - The Published Object](./02-the-published-object.md)) served from the published cache — that is how you get its URL and properties. The media *file* that URL points at is what this chapter caches. Same content, two very different caches.
 
 ## The short version
 
@@ -89,7 +91,7 @@ sequenceDiagram
 
 > **Evidence note.** The local Umbraco CMS source trees do not include the separate `Umbraco.StorageProviders` package source. The local docs confirm Azure Blob Storage for media and image caching; the `HybridCache`-backed metadata-cache details in this section should be treated as package-source or release-note evidence until that package source is added locally.
 
-> **Key term — blob metadata cache.** The most obviously cache-related feature in the package: instead of asking Azure for a file's size and last-modified date on every request, Umbraco remembers them for a short while. It is the difference between glancing at a label already stuck to the box and walking to the fridge to weigh the item afresh every single time.
+> **Key term — blob metadata cache.** The most obviously cache-related feature in the package: instead of asking Azure for a file's size and last-modified date on every request, Umbraco remembers them for a short while. That turns a repeated remote round-trip to blob storage into a cheap in-memory lookup.
 
 Package-source notes describe Azure Blob metadata caching for values such as file size and last modified time. The motivation is straightforward:
 
@@ -265,10 +267,10 @@ That is why Storage Providers deserves its own chapter.
 
 ### Where to go next
 
-- [Chapter 9: Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md) — more on the `HybridCache` model the package-source metadata-cache notes describe.
-- [Chapter 10: NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md) — how the published-content side compares.
-- [Chapter 04: Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md) — the refresher pipeline the media side deliberately sidesteps.
-- [Chapter 15: UMB.FYI Archive Notes](./15-appendix-umbfyi-archive-notes.md) — media/CDN, Delivery API, and headless cache-adjacent material found in the archive.
+- [Chapter 11: Future Hybrid Cache Architecture](./11-future-hybrid-cache-architecture.md) — more on the `HybridCache` model the package-source metadata-cache notes describe.
+- [Chapter 12: NuCache vs Hybrid Cache](./12-nucache-vs-hybrid-cache.md) — how the published-content side compares.
+- [Chapter 6: Cache Busting and Invalidation](./06-cache-busting-and-invalidation.md) — the refresher pipeline the media side deliberately sidesteps.
+- [Chapter 17: UMB.FYI Archive Notes](./17-appendix-umbfyi-archive-notes.md) — media/CDN, Delivery API, and headless cache-adjacent material found in the archive.
 
 ## Sources
 
@@ -277,9 +279,9 @@ That is why Storage Providers deserves its own chapter.
 - Source:
   - [Umbraco.StorageProviders on GitHub](https://github.com/umbraco/Umbraco.StorageProviders)
 - Supporting material:
-  - [UMB.FYI archive notes](./15-appendix-umbfyi-archive-notes.md)
+  - [UMB.FYI archive notes](./17-appendix-umbfyi-archive-notes.md)
 
-[^09-three]: See [U14 in the appendix](./14-appendix-sources.md#u14-storage-providers-docs) and [S1](./14-appendix-sources.md#s1-umbracostorageproviders-repository).
-[^09-hybrid]: See [S1](./14-appendix-sources.md#s1-umbracostorageproviders-repository) and [M2](./14-appendix-sources.md#m2-aspnet-core-hybridcache).
-[^09-bust]: See [S1](./14-appendix-sources.md#s1-umbracostorageproviders-repository).
-[^09-24days-media]: See [F9 in the appendix](./14-appendix-sources.md#f9-24days-caching-field-notes), especially the 2015 CDN article and the 2022 static-asset TagHelper article.
+[^09-three]: See [U14 in the appendix](./16-appendix-sources.md#u14-storage-providers-docs) and [S1](./16-appendix-sources.md#s1-umbracostorageproviders-repository).
+[^09-hybrid]: See [S1](./16-appendix-sources.md#s1-umbracostorageproviders-repository) and [M2](./16-appendix-sources.md#m2-aspnet-core-hybridcache).
+[^09-bust]: See [S1](./16-appendix-sources.md#s1-umbracostorageproviders-repository).
+[^09-24days-media]: See [F9 in the appendix](./16-appendix-sources.md#f9-24days-caching-field-notes), especially the 2015 CDN article and the 2022 static-asset TagHelper article.

@@ -1,4 +1,4 @@
-# 15. Appendix: UMB.FYI Archive Notes for Cache and Index Topics
+# 17. Appendix: UMB.FYI Archive Notes for Cache and Index Topics
 
 > **Start here.** This appendix preserves the book-relevant knowledge found by sweeping the UMB.FYI newsletter archive on 1 July 2026. UMB.FYI is not the implementation authority for Umbraco caching, but it is a useful map of community writing, talks, package announcements, public announcements, and operational field notes that orbit caching, indexing, search, media delivery, and performance.
 
@@ -8,7 +8,7 @@ The main teaching chapters should still prefer code, official docs, Microsoft so
 
 - Treat UMB.FYI as a signpost, not the final proof.
 - Follow the linked article, video, RFC, package, or announcement before making a strong technical claim.
-- Cite [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail) when referring to this archive sweep.
+- Cite [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail) when referring to this archive sweep.
 - Prefer existing source IDs such as `U15`, `U21`, `S2`, `T4`, `T5`, and `F4` when a primary or stronger source already exists.
 
 ## Archive themes that fit the book
@@ -32,9 +32,9 @@ Second, the HybridCache talk material warns that the cost has not vanished. It m
 
 Book placement:
 
-- Main explanation: [06 - Cache Settings, Talks, and Field Notes](./06-cache-settings-talks-and-field-notes.md)
-- Deeper architecture: [09 - Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md)
-- Query strategy: [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md)
+- Main explanation: [06 - Cache Settings, Talks, and Field Notes](./08-cache-settings-talks-and-field-notes.md)
+- Deeper architecture: [09 - Future Hybrid Cache Architecture](./11-future-hybrid-cache-architecture.md)
+- Query strategy: [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md)
 
 ## Search, Examine, and provider-backed indexing
 
@@ -55,9 +55,9 @@ The lesson for this book is not "Examine is gone". The lesson is sharper:
 
 Book placement:
 
-- Main explanation: [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md)
-- Future-facing note: [09 - Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md)
-- Source register: [S2](./14-appendix-sources.md#s2-umbracocmssearch-repository), [U21-U26](./14-appendix-sources.md#u21-umbraco-search-overview), and [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail)
+- Main explanation: [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md)
+- Future-facing note: [09 - Future Hybrid Cache Architecture](./11-future-hybrid-cache-architecture.md)
+- Source register: [S2](./16-appendix-sources.md#s2-umbracocmssearch-repository), [U21-U26](./16-appendix-sources.md#u21-umbraco-search-overview), and [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail)
 
 ## Practical index shaping
 
@@ -83,8 +83,8 @@ This belongs in the book because it mirrors the cache-invalidation story. A deri
 
 Book placement:
 
-- [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md)
-- [12 - Lessons from the Issue Tracker](./12-lessons-from-the-issue-tracker.md)
+- [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md)
+- [12 - Lessons from the Issue Tracker](./14-lessons-from-the-issue-tracker.md)
 
 ## Media, CDN, and image caching
 
@@ -103,8 +103,8 @@ Relevant entries include Azure Blob Storage/CDN/Key Vault guidance, external ima
 
 Book placement:
 
-- [08 - Storage Providers and Media Caching](./08-storage-providers-and-media-caching.md)
-- [02 - Website Output Caching](./02-website-output-caching.md) for the separate response/output-cache layer
+- [08 - Storage Providers and Media Caching](./10-storage-providers-and-media-caching.md)
+- [02 - Website Output Caching](./03-website-output-caching.md) for the separate response/output-cache layer
 
 ## Delivery API, headless, and cache-adjacent flows
 
@@ -121,8 +121,8 @@ This is cache-adjacent rather than published-content-cache implementation detail
 
 Book placement:
 
-- [04 - Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md)
-- [08 - Storage Providers and Media Caching](./08-storage-providers-and-media-caching.md)
+- [04 - Cache Busting and Invalidation](./06-cache-busting-and-invalidation.md)
+- [08 - Storage Providers and Media Caching](./10-storage-providers-and-media-caching.md)
 
 ## Cloud operations and performance field notes
 
@@ -227,15 +227,15 @@ The archive is valuable, but it is mixed. Avoid over-claiming these points:
 
 The UMB.FYI archive material has been integrated into the book as follows:
 
-- [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md) now explains the Umbraco Search abstraction trail, provider-backed search, tailored indexing, and operational index risks.
-- [08 - Storage Providers and Media Caching](./08-storage-providers-and-media-caching.md) should be read with the media/CDN notes in this appendix.
-- [06 - Cache Settings, Talks, and Field Notes](./06-cache-settings-talks-and-field-notes.md) should be read with the deliberate warm-up and HybridCache talk notes here.
-- [14 - Appendix: Sources](./14-appendix-sources.md) now contains the canonical `F8` source register for the archive sweep.
+- [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md) now explains the Umbraco Search abstraction trail, provider-backed search, tailored indexing, and operational index risks.
+- [08 - Storage Providers and Media Caching](./10-storage-providers-and-media-caching.md) should be read with the media/CDN notes in this appendix.
+- [06 - Cache Settings, Talks, and Field Notes](./08-cache-settings-talks-and-field-notes.md) should be read with the deliberate warm-up and HybridCache talk notes here.
+- [14 - Appendix: Sources](./16-appendix-sources.md) now contains the canonical `F8` source register for the archive sweep.
 
-[^15-cache-warmup]: See [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 27 November 2024 entry.
-[^15-hybrid-talk]: See [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 10 June 2026 entry, plus [T4](./14-appendix-sources.md#t4-enkelmedia-article) and [T5](./14-appendix-sources.md#t5-enkelmedia-pdf).
-[^15-index-shape]: See [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 28 August 2024, 3 September 2025, and 17 September 2025 entries.
-[^15-index-ops]: See [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 7 August 2024 and 23 July 2025 entries.
-[^15-media]: See [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 4 October 2023, 15 November 2023, 7 August 2024, and 27 November 2024 entries.
-[^15-headless]: See [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 8 November 2023, 15 November 2023, and 18 October 2023 entries.
-[^15-ops]: See [F8](./14-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 3 June 2026, 27 May 2026, and 3 December 2025 entries.
+[^15-cache-warmup]: See [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 27 November 2024 entry.
+[^15-hybrid-talk]: See [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 10 June 2026 entry, plus [T4](./16-appendix-sources.md#t4-enkelmedia-article) and [T5](./16-appendix-sources.md#t5-enkelmedia-pdf).
+[^15-index-shape]: See [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 28 August 2024, 3 September 2025, and 17 September 2025 entries.
+[^15-index-ops]: See [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 7 August 2024 and 23 July 2025 entries.
+[^15-media]: See [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 4 October 2023, 15 November 2023, 7 August 2024, and 27 November 2024 entries.
+[^15-headless]: See [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 8 November 2023, 15 November 2023, and 18 October 2023 entries.
+[^15-ops]: See [F8](./16-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), especially the 3 June 2026, 27 May 2026, and 3 December 2025 entries.
