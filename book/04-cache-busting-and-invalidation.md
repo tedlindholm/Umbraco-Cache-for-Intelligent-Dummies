@@ -247,6 +247,16 @@ The important part is not the sample GUIDs. The important part is the direction 
 
 That is the beginner mental model: the publish does not merely replace one object. It sends a trust-revocation notice through every layer that might now be lying.
 
+## Field note: the edge does not hear Umbraco whispers
+
+Older 24days articles are useful here because they show the same rule from the outside in: browser caches, CDN edge caches, and static files do not automatically know that Umbraco has published something.[^04-24days-edge]
+
+The 2013 cache-busting article uses a tiny Razor partial to append a version query string based on a static file's last write time. The logic is deliberately simple: if `/css/site.css` becomes `/css/site.css?v=638...`, then a browser that was allowed to keep the old CSS for a long time sees a different URL and asks again. That is not Umbraco's distributed cache refresher pipeline. It is URL design doing the invalidation work.
+
+The 2015 CDN article makes the same point at a larger scale. A CDN may cache static files, media, and sometimes dynamic pages; the freshness rules come from `Cache-Control`, conditional requests, query strings, expiry, and purges. If a deployment changes static assets, a versioned URL can force the browser and CDN to fetch the new file. If the URL stays the same, the edge may keep serving exactly what it was told was fresh.
+
+That is why this book keeps separating layers. Umbraco can broadcast cache-refresher notifications to its own servers. It cannot magically revoke a browser cache entry, a CDN object, or a static HTML file unless your HTTP headers, URLs, webhook, or CDN purge path carry that instruction too.
+
 ## Why distributed invalidation matters more than distributed storage
 
 This is the key production lesson.
@@ -375,3 +385,4 @@ Umbraco caching works because it is aggressive about invalidation *choreography*
 [^04-refresher]: See [C7](./14-appendix-sources.md#c7-core-cache-types-and-refreshers) and [C6](./14-appendix-sources.md#c6-website-output-cache-implementation).
 [^04-worked-trace]: See [C7](./14-appendix-sources.md#c7-core-cache-types-and-refreshers), [C6](./14-appendix-sources.md#c6-website-output-cache-implementation), and [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main). The GUID values in the trace are illustrative sample keys, not constants from Umbraco.
 [^04-field-instructions]: See [F7 in the appendix](./14-appendix-sources.md#f7-distributed-cache-field-reports-v17).
+[^04-24days-edge]: See [F9 in the appendix](./14-appendix-sources.md#f9-24days-caching-field-notes) for the 24days cache-busting and CDN field notes. These articles are historical community sources, not current v17 implementation sources.

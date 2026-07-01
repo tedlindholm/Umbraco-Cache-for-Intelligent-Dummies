@@ -28,6 +28,7 @@ cache busting and invalidation matter at least as much as cache creation.
 - [12 - Lessons from the Issue Tracker](./book/12-lessons-from-the-issue-tracker.md)
 - [13 - Reading the Cache Code](./book/13-reading-the-cache-code.md)
 - [14 - Appendix: Sources](./book/14-appendix-sources.md)
+- [15 - Appendix: UMB.FYI Archive Notes for Cache and Index Topics](./book/15-appendix-umbfyi-archive-notes.md)
 
 ## PDF Export Note (Large Graphs)
 

@@ -225,6 +225,18 @@ The most concrete busting rule we have from the package is this: writes through 
 
 For the other layers the story is looser. CDN cache busting depends on URL uniqueness, expiry, and CDN configuration, while ImageSharp cache freshness depends on how variants are addressed and stored. So the media side often relies more on key design, path design, query-string design, and remote cache expiry than on the classic Umbraco cache refresher pipeline.
 
+## Historical field note: CDN cache busting is mostly key design
+
+The 24days caching archive gives a useful older view of this same media and asset problem.[^09-24days-media]
+
+One 2015 article explains the practical CDN stack in plain terms: the browser, CDN proxy, and sometimes other proxies each hold their own cached copy. A cache hit is excellent for speed, but only if the cached object is still the object you meant to serve. That is why the article pairs long cache lifetimes with versioned URLs, and why it warns that changing the query string makes the CDN and browser treat the asset as a different file.
+
+The media detail is still recognisable today. If image crops or resized variants are addressed by URL, the CDN has to treat the query string as part of the cache key. Otherwise two different image variants can collapse into one cached response. In modern Umbraco terms, this is the same principle behind the gotcha earlier in this chapter: media variants are not just files; they are addressed variants.
+
+Another 2022 article adds a more recent asset-delivery lesson: the old assumption that a visitor's browser probably already has a popular library cached from a third-party CDN is much weaker than it used to be. Self-hosting static assets can improve reliability, privacy, and control, but it pushes the same responsibility back onto your site: pick stable versions, serve cacheable files, and give browsers a new URL when the file changes.
+
+So the media lesson is not "use a CDN and stop thinking". It is: choose stable cache keys, make variant URLs unambiguous, and decide how stale edge objects will be replaced.
+
 ## Practical lesson
 
 If content caching is about "which published data is safe to serve?", then media caching is more about a different set of questions:
@@ -256,6 +268,7 @@ That is why Storage Providers deserves its own chapter.
 - [Chapter 9: Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md) — more on the `HybridCache` model the package-source metadata-cache notes describe.
 - [Chapter 10: NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md) — how the published-content side compares.
 - [Chapter 04: Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md) — the refresher pipeline the media side deliberately sidesteps.
+- [Chapter 15: UMB.FYI Archive Notes](./15-appendix-umbfyi-archive-notes.md) — media/CDN, Delivery API, and headless cache-adjacent material found in the archive.
 
 ## Sources
 
@@ -263,7 +276,10 @@ That is why Storage Providers deserves its own chapter.
   - [Umbraco Storage Providers](https://docs.umbraco.com/marketplace-and-integrations/packages/storage-providers)
 - Source:
   - [Umbraco.StorageProviders on GitHub](https://github.com/umbraco/Umbraco.StorageProviders)
+- Supporting material:
+  - [UMB.FYI archive notes](./15-appendix-umbfyi-archive-notes.md)
 
 [^09-three]: See [U14 in the appendix](./14-appendix-sources.md#u14-storage-providers-docs) and [S1](./14-appendix-sources.md#s1-umbracostorageproviders-repository).
 [^09-hybrid]: See [S1](./14-appendix-sources.md#s1-umbracostorageproviders-repository) and [M2](./14-appendix-sources.md#m2-aspnet-core-hybridcache).
 [^09-bust]: See [S1](./14-appendix-sources.md#s1-umbracostorageproviders-repository).
+[^09-24days-media]: See [F9 in the appendix](./14-appendix-sources.md#f9-24days-caching-field-notes), especially the 2015 CDN article and the 2022 static-asset TagHelper article.

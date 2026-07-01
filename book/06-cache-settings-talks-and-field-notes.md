@@ -406,6 +406,7 @@ quadrantChart
 - [10 - NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md) — the clean split between the old architecture and the new one.
 - [09 - Future Hybrid Cache Architecture](./09-future-hybrid-cache-architecture.md) — the seeding, serialisation, and rebuild machinery these dials control.
 - [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md) — the query habits the talks keep warning about.
+- [15 - Appendix: UMB.FYI Archive Notes](./15-appendix-umbfyi-archive-notes.md) — the archive trail for HybridCache talks, deliberate warm-up, and operational performance notes.
 
 ## Sources
 
@@ -415,6 +416,7 @@ quadrantChart
 - Supporting material:
   - [Hybrid Cache förändrar allt — Umbraco Kalaset session (YouTube)](https://www.youtube.com/watch?v=JyXlvDoreS8)
   - [Hybrid Cache förändrar allt — Umbraco Kalaset slides (PDF)](https://www.umbracokalaset.se/media/ccvhwzvs/hybrid-cache-forandrar-allt.pdf)
+  - [UMB.FYI archive notes](./15-appendix-umbfyi-archive-notes.md)
 
 [^06-talks]: See [T1](./14-appendix-sources.md#t1-releasing-hybridcache-into-the-wild-with-umbraco), [T2](./14-appendix-sources.md#t2-hybrid-cache-forandrar-allt-pdf), [T4](./14-appendix-sources.md#t4-enkelmedia-article), [T5](./14-appendix-sources.md#t5-enkelmedia-pdf), [B1](./14-appendix-sources.md#b1-umbraco-15-release), [B5](./14-appendix-sources.md#b5-umbraco-product-update---august-2024), and [B6](./14-appendix-sources.md#b6-umbraco-product-update---q1-2025).
 [^06-payload]: See [M6](./14-appendix-sources.md#m6-hybridcacheoptions), [U4](./14-appendix-sources.md#u4-cache-settings-for-umbraco-17), [U5](./14-appendix-sources.md#u5-current-cache-settings-page), and [C4](./14-appendix-sources.md#c4-umbracopublishedcachehybridcache-on-main).

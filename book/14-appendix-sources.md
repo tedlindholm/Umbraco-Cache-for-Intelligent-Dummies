@@ -410,3 +410,29 @@ Most relevant cache and index entries:
 - [2024-08-07 - An Examine fix for Umbraco index corruption](https://umb.fyi/2024-08-07)
   - Points to [An Examine fix for Umbraco index corruption](https://shazwazza.com/post/an-examine-fix-for-umbraco-index-corruption/)
   - Useful for the operational side of indexes: corruption, health checks, main/local index synchronisation, Azure-style environments, and rebuild overhead.
+
+### F9. 24days caching field notes
+
+24days articles are community field notes, not primary implementation sources. They are useful for historical examples, practical edge-cache language, and older Umbraco patterns around asset busting, CDN delivery, partial/macro caching, routing caches, and static output.
+
+Tag index checked on 1 July 2026:
+
+- [24days caching tag page](https://24days.in/umbraco-cms/tags/caching)
+
+Most relevant articles:
+
+- [Bust a cache](https://archive.24days.in/umbraco-cms/2013/cache-busting/) - static asset cache busting with file last-write-time query strings and long browser cache lifetimes.
+- [Using a CDN with Umbraco](https://archive.24days.in/umbraco-cms/2015/using-a-cdn-with-umbraco/) - CDN origins, `Cache-Control`, conditional requests, query-string versioning, media crops, and dynamic-content freshness notes.
+- [Get More Out of Umbraco Using Server-Side Caching Strategies](https://archive.24days.in/umbraco-cms/2013/get-more-out-of-umbraco-using-server-side-caching-strategies/) - historical partial/model caching, custom clearing on publish, and load-balanced invalidation cautions.
+- [Static website with Umbraco Heartcore](https://archive.24days.in/umbraco-cms/2020/static-website-with-umbraco-heartcore/) - first-request static HTML generation, subsequent static-file serving, and webhook-driven deletion after content changes.
+- [Self-host your static assets with a TagHelper](https://24days.in/umbraco-cms/2022/static-assets-taghelper/) - self-hosting third-party assets, local file reuse, explicit versions, and delete-to-refresh behaviour.
+- [Optimising Umbraco for speed](https://archive.24days.in/umbraco-cms/2012/optimise-for-speed/) - historical macro caching and image-compression advice.
+- [Modify Umbraco URLs with the UrlProvider and ContentFinder](https://archive.24days.in/umbraco-cms/2014/urlprovider-and-contentfinder/) - custom URL lookup caching and explicit cache clearing on publish.
+- [Performance Boosts for Umbraco](https://archive.24days.in/umbraco-cms/2017/the-one-with-performance/performance-boosts-for-umbraco/) - historical `CachedPartial`, Web API output-cache, and package-level cache advice.
+
+Useful but broader sustainability/front-end context:
+
+- [Eco-Friendly Web Development: Harnessing SSG and Prerendering for a Sustainable Tomorrow](https://24days.in/umbraco-cms/2023/eco-friendly-web-development/) - static-site generation, prerendering, CDN distribution, and sustainability framing.
+- [Green Code: A Blueprint for Eco-Friendly Websites](https://24days.in/umbraco-cms/2023/green-code/) - sustainability, lazy loading, CDNs, MiniProfiler, and performance measurement.
+- [10 tips to make your Umbraco site more sustainable](https://24days.in/umbraco-cms/2025/sustainability-tips/) - CDN caching, Cloudflare-style full-page edge caching, image optimisation, static front ends, and scale-to-zero infrastructure.
+- [Turbo charging websites with PJAX](https://archive.24days.in/umbraco-cms/2015/turbo-charging-websites-with-pjax/) - partial-page loading as a bandwidth/perceived-performance pattern rather than a server cache implementation.

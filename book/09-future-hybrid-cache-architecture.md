@@ -541,9 +541,10 @@ The layers, from nearest to furthest:
 
 ### Where to go next
 
-- [12. NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md) — how this future model differs from the cache it replaces.
-- [15. Reading the cache code](./13-reading-the-cache-code.md) — trace `DocumentCacheService` and friends in the source yourself.
-- [04. Cache busting and invalidation](./04-cache-busting-and-invalidation.md) — the invalidation story this chapter builds on.
+- [10 - NuCache vs Hybrid Cache](./10-nucache-vs-hybrid-cache.md) — how this future model differs from the cache it replaces.
+- [13 - Reading the Cache Code](./13-reading-the-cache-code.md) — trace `DocumentCacheService` and friends in the source yourself.
+- [04 - Cache Busting and Invalidation](./04-cache-busting-and-invalidation.md) — the invalidation story this chapter builds on.
+- [15 - UMB.FYI Archive Notes](./15-appendix-umbfyi-archive-notes.md) — future-facing community signals around HybridCache, search providers, headless delivery, and operations.
 
 ## Sources
 
@@ -564,6 +565,8 @@ The layers, from nearest to furthest:
   - `umbraco-main/src/Umbraco.PublishedCache.HybridCache/DatabaseCacheRebuilder.cs`
   - `umbraco-main/src/Umbraco.PublishedCache.HybridCache/Serialization/HybridCacheSerializer.cs`
   - `umbraco-main/src/Umbraco.PublishedCache.HybridCache/Persistence/DatabaseCacheRepository.cs`
+- Supporting material:
+  - [UMB.FYI archive notes](./15-appendix-umbfyi-archive-notes.md)
 
 [^10-msbase]: See [M1](./14-appendix-sources.md#m1-caching-in-net), [M2](./14-appendix-sources.md#m2-aspnet-core-hybridcache), and [M4](./14-appendix-sources.md#m4-hybrid-cache-is-now-ga).
 [^10-relevant]: See [M1](./14-appendix-sources.md#m1-caching-in-net), [M2](./14-appendix-sources.md#m2-aspnet-core-hybridcache), [M5](./14-appendix-sources.md#m5-hybridcacheentryoptions), and [M6](./14-appendix-sources.md#m6-hybridcacheoptions).

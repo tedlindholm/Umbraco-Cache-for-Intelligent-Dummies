@@ -109,6 +109,22 @@ There is also a separate question hiding underneath it:
 
 See [11 - Examine, Indexes, and Cache-Adjacent Querying](./11-examine-indexes-and-cache-adjacent-querying.md).
 
+## Historical field note: derived data still needs its own busting rule
+
+A 2013 24days article makes a useful distinction that still matters, even though its APIs are old.[^07-24days-derived]
+
+Umbraco's published cache can make raw published values cheap to read, but a site may still spend real CPU time building menus, view models, location-specific fragments, or other derived data from those values. The article solved that with custom partial caching and singleton-style in-memory caches, then cleared them on publish events.
+
+The modern version of that lesson is not "copy the old code". It is the same small loop this chapter teaches:
+
+- name the derived result with a cache key
+- fill it only when missing
+- identify which backoffice change makes it stale
+- clear it once when that change happens
+- add distributed invalidation if more than one server can hold a copy
+
+That last point is the important production warning. The old article had to send its own signal from the admin server to the load-balanced front-end servers. Current Umbraco gives you a cleaner route through `ICacheRefresher` and `DistributedCache`, but the shape of the problem has not changed: every process that can serve the stale derived value has to hear the busting instruction.
+
 ## Good mental split
 
 ### Small local app cache
@@ -192,3 +208,4 @@ This tags example teaches the smallest useful cache-busting loop in Umbraco: fil
 
 [^07-tags]: See [U10 in the appendix](./14-appendix-sources.md#u10-tags-example) and [U7](./14-appendix-sources.md#u7-application-cache-docs).
 [^07-publish]: See [U10](./14-appendix-sources.md#u10-tags-example) and [U6](./14-appendix-sources.md#u6-server-side-extensions-cache-docs).
+[^07-24days-derived]: See [F9 in the appendix](./14-appendix-sources.md#f9-24days-caching-field-notes), especially the 2013 server-side caching strategies article. Treat it as historical field-note evidence, not current API guidance.
