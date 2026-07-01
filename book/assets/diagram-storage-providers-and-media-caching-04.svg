@@ -1,0 +1,70 @@
+<svg viewBox="0 0 770 740" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+  <defs>
+    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#667eea"/>
+      <stop offset="100%" stop-color="#764ba2"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#667eea" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8f96bd"/>
+    </marker>
+  </defs>
+
+  <rect width="770" height="740" fill="white"/>
+
+  <g filter="url(#soft)">
+    <rect x="230" y="68" width="310" height="54" rx="8" fill="#f3f4fb"/>
+    <rect x="230" y="68" width="6" height="54" rx="3" fill="url(#lineGrad)"/>
+
+    <rect x="48" y="168" width="310" height="64" rx="8" fill="#f3f4fb"/>
+    <rect x="48" y="168" width="6" height="64" rx="3" fill="url(#lineGrad)"/>
+
+    <rect x="412" y="168" width="310" height="64" rx="8" fill="#f3f4fb"/>
+    <rect x="412" y="168" width="6" height="64" rx="3" fill="url(#lineGrad)"/>
+
+    <rect x="412" y="286" width="310" height="64" rx="8" fill="#f3f4fb"/>
+    <rect x="412" y="286" width="6" height="64" rx="3" fill="url(#lineGrad)"/>
+
+    <rect x="230" y="354" width="310" height="54" rx="8" fill="#f3f4fb"/>
+    <rect x="230" y="354" width="6" height="54" rx="3" fill="url(#lineGrad)"/>
+
+    <rect x="230" y="462" width="310" height="64" rx="8" fill="#f3f4fb"/>
+    <rect x="230" y="462" width="6" height="64" rx="3" fill="url(#lineGrad)"/>
+
+    <rect x="230" y="580" width="310" height="64" rx="8" fill="#f3f4fb"/>
+    <rect x="230" y="580" width="6" height="64" rx="3" fill="url(#lineGrad)"/>
+  </g>
+
+  <g stroke="#8f96bd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" marker-end="url(#arrow)">
+    <path d="M385 122 L385 150 L203 150 L203 168"/>
+    <path d="M385 122 L385 150 L567 150 L567 168"/>
+    <path d="M567 232 L567 286"/>
+    <path d="M203 232 L203 381 L230 381"/>
+    <path d="M567 350 L567 381 L540 381"/>
+    <path d="M385 408 L385 462"/>
+    <path d="M385 526 L385 580"/>
+  </g>
+
+  <g font-size="13" font-weight="400" fill="#2f3142">
+    <text x="385" y="99" text-anchor="middle">Original media blob</text>
+
+    <text x="203" y="195.5" text-anchor="middle">Blob metadata cache in</text>
+    <text x="203" y="212.5" text-anchor="middle">HybridCache</text>
+
+    <text x="567" y="195.5" text-anchor="middle">ImageSharp generates</text>
+    <text x="567" y="212.5" text-anchor="middle">variant</text>
+
+    <text x="567" y="313.5" text-anchor="middle">Variant stored in blob-based</text>
+    <text x="567" y="330.5" text-anchor="middle">image cache</text>
+
+    <text x="385" y="385" text-anchor="middle">Origin can answer faster</text>
+
+    <text x="385" y="489.5" text-anchor="middle">CDN caches final</text>
+    <text x="385" y="506.5" text-anchor="middle">response</text>
+
+    <text x="385" y="607.5" text-anchor="middle">Visitors avoid origin entirely</text>
+    <text x="385" y="624.5" text-anchor="middle">on hit</text>
+  </g>
+</svg>

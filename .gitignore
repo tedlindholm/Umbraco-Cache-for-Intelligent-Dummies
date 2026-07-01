@@ -3,3 +3,5 @@ umbraco-docs/
 umbraco-main/
 umbraco-v17/
 umbraco-v18/
+/.pdf-temp
+/node_modules

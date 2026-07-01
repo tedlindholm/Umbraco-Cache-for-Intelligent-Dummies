@@ -163,16 +163,7 @@ If the answer is "find the right items", an index is often right.
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-  A["Need data for a feature"] --> B{"Do you already know the exact item(s)?"}
-  B -- "Yes" --> C{"Need to avoid recomputing a small result?"}
-  C -- "Yes" --> D["Use RuntimeCache + invalidation"]
-  C -- "No" --> E["Use published-content APIs for the current published representation"]
-  B -- "No" --> F{"Need filtering/search across many items?"}
-  F -- "Yes" --> G["Use Examine index"]
-  F -- "No" --> E
-```
+![Decision guide showing when to use published-content APIs, RuntimeCache, or Examine for a feature that needs data](./assets/diagram-examine-indexes-and-cache-adjacent-querying-01.svg)
 
 </div>
 
@@ -203,18 +194,9 @@ That checklist is the practical version of the chapter's main message:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["I need data for a feature"] --> B{"What kind of problem is it?"}
-    B -- "Load published content by known ids or routes" --> C["Use published-content APIs"]
-    B -- "Reuse a small computed result like menu/footer/DTO" --> D["Use RuntimeCache"]
-    B -- "Search or filter across many items" --> E["Use Examine"]
-    E --> F["Query index instead of broad traversal"]
-    C --> G["Optionally combine with output caching"]
-    D --> H["Add invalidation when source changes"]
-```
+![Three-column decision chart: known content uses published-content APIs, repeated small answers use RuntimeCache, and search or filtering uses Examine](./assets/diagram-examine-indexes-and-cache-adjacent-querying-02.svg)
 
-  </div>
+</div>
 
 ## Good examples for `RuntimeCache`
 

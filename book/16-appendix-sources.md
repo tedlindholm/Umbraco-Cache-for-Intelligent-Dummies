@@ -269,6 +269,14 @@ Verified against a local Umbraco v17 checkout (`.NET 10.0` target) on 1 July 202
 - `umbraco-v17/src/Umbraco.PublishedCache.HybridCache/Serialization/HybridCacheSerializer.cs` — `IHybridCacheSerializer<ContentCacheNode>` using MessagePack `ContractlessStandardResolver` with `MessagePackCompression.Lz4BlockArray` and `MessagePackSecurity.UntrustedData`.
 - `DocumentCacheService.cs` specifics: `GetCacheKey` (`$"{key}+draft"` for preview), `GenerateTags` / `ContentTypeIdTag` (`"content"` + `$"ct:{contentTypeId}"`, with the negative-entry rationale in the XML doc), and `GetEntryOptions` / `GetSeedEntryOptions` mapping `RemoteCacheDuration`/`LocalCacheDuration`/`SeedCacheDuration` onto `Expiration`/`LocalCacheExpiration`.
 
+### C15. Content Delivery API output-cache implementation
+
+- `umbraco-v17/src/Umbraco.Core/Constants-DeliveryApi.cs` - Delivery API output-cache tag constants.
+- `umbraco-v17/src/Umbraco.Cms.Api.Delivery/Caching/DeliveryApiOutputCachePolicyBase.cs` - response tagging before Delivery API output-cache storage.
+- `umbraco-v17/src/Umbraco.Cms.Api.Delivery/Caching/DeliveryApiDocumentOutputCacheEvictionHandler.cs` - document-driven Delivery API output-cache eviction by tag.
+- `umbraco-v17/src/Umbraco.Web.Common/Caching/RelationOutputCacheEvictionHandlerBase.cs` - relation-aware eviction for responses that embed or reference changed content.
+- `umbraco-v18/src/Umbraco.Web.Website/Caching/WebsiteElementOutputCacheEvictionHandler.cs` - v18 element-aware output-cache eviction comparison point.
+
 ## Storage Providers source
 
 ### S1. `Umbraco.StorageProviders` repository

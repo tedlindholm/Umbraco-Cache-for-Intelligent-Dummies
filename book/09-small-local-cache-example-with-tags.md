@@ -27,14 +27,7 @@ The idea is:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Request for blog tags"] --> B{"Runtime cache hit for blogTags?"}
-    B -- yes --> C["Return cached tags"]
-    B -- no --> D["Read tags from ITagQuery"]
-    D --> E["Store in RuntimeCache"]
-    E --> C
-```
+![Request for blog tags diagram](./assets/diagram-small-local-cache-example-with-tags-01.svg)
 
 </div>
 
@@ -151,20 +144,7 @@ public class BlogTagCacheComposer : IComposer
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-sequenceDiagram
-    participant E as Editor
-    participant U as Umbraco
-    participant C as RuntimeCache
-    participant R as Next request
-
-    E->>U: Publish blog post
-    U->>C: ClearByKey("blogTags")
-    R->>C: Request blogTags
-    C-->>R: Cache miss
-    R->>R: Re-read tags from source
-    R->>C: Store new blogTags value
-```
+![U->>C: ClearByKey( diagram](./assets/diagram-small-local-cache-example-with-tags-02.svg)
 
 </div>
 
@@ -240,14 +220,7 @@ The bigger chapters explain:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["I want to cache custom data"] --> B{"Single server or just learning the pattern?"}
-    B -- yes --> C["RuntimeCache + ClearByKey is a good start"]
-    B -- no --> D{"Will backoffice changes affect the data?"}
-    D -- yes --> E["Add ICacheRefresher + DistributedCache"]
-    D -- no --> F["Simple local cache may still be enough"]
-```
+![I want to cache custom data diagram](./assets/diagram-small-local-cache-example-with-tags-03.svg)
 
 </div>
 

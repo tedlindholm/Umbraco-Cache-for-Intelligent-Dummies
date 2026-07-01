@@ -52,23 +52,7 @@ Put all three layers together and a headless request looks like this:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Frontend requests /umbraco/delivery/api/v2/content/..."] --> B{"Browser or CDN has a fresh copy?"}
-    B -- yes --> C["Served by browser / proxy cache"]
-    B -- no --> D{"Content Delivery API output cache hit?"}
-    D -- yes --> E["Server returns cached JSON"]
-    D -- no --> F["CDA pipeline runs"]
-    F --> G{"Published object already in local hot cache?"}
-    G -- yes --> H["Return already materialised published object"]
-    G -- no --> I{"HybridCache hit?"}
-    I -- yes --> J["Read serialised cache node"]
-    I -- no --> K["Read serialised content from database-backed cache source"]
-    K --> J
-    J --> H
-    H --> L["Serialise to JSON response"]
-    L --> M["Possibly store JSON in CDA output cache"]
-```
+![A headless request flow: browser/CDN check, then CDA output cache check, then the CDA pipeline builds the published object via the hot cache, HybridCache, or database fallback, before serialising and possibly storing the JSON response.](./assets/flow-cda-request.svg)
 
 </div>
 

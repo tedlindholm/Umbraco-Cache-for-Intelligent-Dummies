@@ -55,21 +55,7 @@ A normal editor publish fires one cache refresher notification per changed item,
 
 Deploy's notification model is intentionally batched: less per-item signalling during transfer, and one coordinated refresh step after completion.
 
-<div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
-
-```mermaid
-flowchart LR
-    subgraph A["Normal CMS publish"]
-        A1["One item saved"] --> A2["Refresher fires immediately"]
-    end
-    subgraph B["Deploy operation"]
-        B1["Many items transferred"] --> B2["Per-item notifications suppressed"]
-        B2 --> B3["Operation completes"]
-        B3 --> B4["Refresher fires once for all changes"]
-    end
-```
-
-</div>
+![A normal CMS publish saves one item and its refresher fires immediately. A Deploy operation transfers many items, suppresses per-item notifications while it runs, and only once the operation completes does its refresher fire once for all changes.](./assets/flow-deploy-vs-publish.svg)
 
 ### The key setting
 
@@ -201,13 +187,7 @@ So Search uses the cache-refresher pipeline in the Umbraco sense: not as a place
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Content saved, published, moved, or deleted"] --> B["Search custom cache refresher payload"]
-    B --> C["DistributedCache broadcasts instruction"]
-    C --> D["Each server handles indexing notification"]
-    D --> E["Update, delete, or rebuild affected index entries"]
-```
+![Content saved, published, moved, or deleted diagram](./assets/diagram-hq-extensions-and-cache-01.svg)
 
 </div>
 
@@ -258,17 +238,7 @@ Each product has one or more of these four cache concerns:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["HQ extension in use"] --> B{"Does page content vary per visitor?"}
-    B -- "Yes" --> C["Disable or vary-by the output cache for that page"]
-    B -- "No" --> D["Normal output cache rules apply"]
-    A --> E{"Does the product batch its cache notifications?"}
-    E -- "Yes (Deploy)" --> F["Hook refresher notifications, not save/publish events"]
-    E -- "No" --> G["Normal notification model applies"]
-    A --> H{"Does it maintain derived data?"}
-    H -- "Yes (Search)" --> I["Keep indexes coherent through refresh, rebuild, delete, or swap"]
-```
+![HQ extension in use diagram](./assets/diagram-hq-extensions-and-cache-02.svg)
 
 </div>
 

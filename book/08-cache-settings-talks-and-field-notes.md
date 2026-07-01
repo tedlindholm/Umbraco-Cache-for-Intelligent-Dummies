@@ -29,27 +29,7 @@ The newer `main` branch code also reveals more of the actual mechanics behind th
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-mindmap
-  root((Cache Settings))
-    Startup
-      Seeding
-      Batch sizes
-    Memory
-      Local cache duration
-      Maximum payload size
-    Remote cache
-      Remote cache duration
-    Freshness
-      ContentTypeRebuildMode
-      Invalidation timing
-      Tag-based invalidation
-      Generation guards
-    Future direction
-      Elements
-      Deferred rebuilds
-      Database cache source
-```
+![Cache settings mindmap grouping startup seeding, batch sizes, memory settings, remote cache settings, freshness controls, and future element-aware directions](./assets/diagram-cache-settings-talks-and-field-notes-01.svg)
 
 </div>
 
@@ -105,13 +85,7 @@ It is also a tidy example of Microsoft versus Umbraco responsibilities. Microsof
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-xychart-beta
-    title "Conceptual Payload Pressure"
-    x-axis ["Small site", "Multilingual site", "Block-heavy site", "Large multilingual blocks"]
-    y-axis "Relative payload pressure" 0 --> 100
-    bar [10, 35, 60, 95]
-```
+![Bar chart showing conceptual payload pressure rising from a small site through multilingual and block-heavy sites to large multilingual block-heavy sites](./assets/diagram-cache-settings-talks-and-field-notes-02.svg)
 
 </div>
 
@@ -129,19 +103,7 @@ And in newer docs:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart LR
-    A["Startup begins"] --> B["Collect seed keys"]
-    B --> C["ContentTypeKeys"]
-    B --> D["Breadth-first documents"]
-    B --> E["Breadth-first media"]
-    B --> F["Newer docs: elements too"]
-    C --> G["Union all keys"]
-    D --> G
-    E --> G
-    F --> G
-    G --> H["Warm selected cache entries"]
-```
+![Startup seeding flow collecting seed keys from content type keys, breadth-first documents, breadth-first media, and newer element keys before warming selected cache entries](./assets/diagram-cache-settings-talks-and-field-notes-03.svg)
 
 </div>
 
@@ -207,19 +169,7 @@ The `main` branch code also shows how this works operationally:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-sequenceDiagram
-    participant S as Content type save
-    participant C as Cache
-    participant U as User request
-    participant B as Background rebuild
-
-    S->>C: Evict relevant cache now
-    U->>C: Next request may read older serialised data
-    S->>B: Queue deferred rebuild
-    B->>C: Rebuild serialised cache data
-    B->>C: Evict again after rebuild
-```
+![Deferred rebuild sequence showing immediate cache eviction, a user request possibly reading older serialised data, background rebuild, and a second eviction after rebuild](./assets/diagram-cache-settings-talks-and-field-notes-04.svg)
 
 </div>
 
@@ -275,14 +225,7 @@ The talk [Releasing HybridCache into the Wild with Umbraco](https://www.youtube.
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart LR
-    A["Old mental model"] --> B["Traverse freely"]
-    A --> C["Assume content is already warm"]
-    D["New mental model"] --> E["Seed what matters"]
-    D --> F["Use cache, DTOs, or index intentionally"]
-    D --> G["Be suspicious of broad traversal"]
-```
+![Old versus new mental model showing broad traversal and assumed warm content giving way to deliberate seeding, DTOs, indexes, and suspicion of broad traversal](./assets/diagram-cache-settings-talks-and-field-notes-05.svg)
 
 </div>
 
@@ -306,15 +249,7 @@ Big warnings:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Need a result list"] --> B{"How are you getting it?"}
-    B -- "Traverse tree + filter" --> C["Simple to write"]
-    C --> D["Can become expensive at scale"]
-    B -- "Examine query" --> E["Fast and scalable"]
-    E --> F["Even better with smaller index and optimised query"]
-    B -- "RuntimeCache DTO" --> G["Great for menu, footer, listings"]
-```
+![Decision flow for result lists comparing tree traversal, Examine queries, and RuntimeCache DTOs, with cost warnings for broad traversal](./assets/diagram-cache-settings-talks-and-field-notes-06.svg)
 
 </div>
 
@@ -615,17 +550,7 @@ Now the published-content cache itself has no data to serve. Under Hybrid Cache 
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Empty responses after startup"] --> B{"Is the rendered site<br/>also empty?"}
-    B -- "No, only the Delivery API" --> C["Delivery API reads its own index"]
-    C --> D["Enable DeliveryApi, then rebuild<br/>DeliveryApiContentIndex in Examine Management"]
-    C --> E["Only some items missing?<br/>Check allowed/disallowed types,<br/>protected and unpublished content"]
-    B -- "Yes, pages are blank too" --> F["Published-content cache has no data"]
-    F --> G["Published Status: reload Memory Cache"]
-    G --> H["Still empty? Rebuild the Database Cache"]
-    F --> I["Load balanced? The instruction<br/>must reach every node"]
-```
+![Troubleshooting flow for empty responses after startup, separating Delivery API index problems from published-content cache and load-balanced instruction problems](./assets/diagram-cache-settings-talks-and-field-notes-07.svg)
 
 </div>
 
@@ -648,20 +573,7 @@ None of these are small implementation details; they are the practical engineeri
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-quadrantChart
-    title "HybridCache Trade-offs"
-    x-axis "Lower operational simplicity" --> "Higher operational simplicity"
-    y-axis "Lower performance gain" --> "Higher performance gain"
-    quadrant-1 "Strong wins"
-    quadrant-2 "Useful but costly"
-    quadrant-3 "Weak choices"
-    quadrant-4 "Simple defaults"
-    "Seed key strategy": [0.55, 0.8]
-    "Huge payloads with bad queries": [0.25, 0.35]
-    "Reasonable defaults": [0.8, 0.6]
-    "Lazy traversal habits": [0.2, 0.2]
-```
+![Quadrant chart of HybridCache trade-offs comparing seed key strategy, huge payloads with bad queries, reasonable defaults, and lazy traversal habits](./assets/diagram-cache-settings-talks-and-field-notes-08.svg)
 
 </div>
 

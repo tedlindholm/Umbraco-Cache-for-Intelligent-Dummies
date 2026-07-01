@@ -114,18 +114,7 @@ That fast lane is real and specific. In `DocumentCacheService`, Umbraco keeps a 
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Your code asks for a published node"] --> B{"Already materialised<br/>in the in-process fast lane?"}
-    B -- yes --> C["Return the live IPublishedContent<br/>(no deserialisation)"]
-    B -- no --> D{"Serialised node in HybridCache?"}
-    D -- yes --> E["Deserialise the blob"]
-    D -- no --> F["Load from the database-backed cache source"]
-    F --> E
-    E --> G["Materialise → live IPublishedContent"]
-    G --> H["Store in the fast lane for next time"]
-    H --> C
-```
+![The cost of fetching a published node: an in-process fast-lane hit returns immediately; otherwise Umbraco checks HybridCache, falls back to the database-backed cache source if needed, deserialises the blob, materialises a live IPublishedContent, and stores it in the fast lane before returning it.](./assets/flow-published-object-cost.svg)
 
 </div>
 

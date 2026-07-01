@@ -18,6 +18,9 @@ Install it with the `skills.sh` method:
 npx skills add tedlindholm/umbraco-cache-for-intelligent-dummies
 ```
 
+`npx` downloads and runs the [skills.sh](https://skills.sh) CLI on demand, so there is no
+separate install step — you just need Node.js (npm/npx) installed first.
+
 Use the skill when you want an AI agent to help debug real Umbraco cache symptoms: stale pages, stale published content, load-balanced mismatches, custom caches that do not clear, media-cache confusion, slow warm-up, or stale search/index results. The skill routes the agent to the smallest relevant part of the book and links heavily to GitHub chapters, official docs, and source so it can reason about the issue without blurring NuCache, Hybrid Cache, output cache, media cache, application cache, and distributed invalidation together.
 
 ## Scope
@@ -46,23 +49,32 @@ Use the skill when you want an AI agent to help debug real Umbraco cache symptom
 - [16 - Appendix: Sources](./book/16-appendix-sources.md)
 - [17 - Appendix: UMB.FYI Archive Notes for Cache and Index Topics](./book/17-appendix-umbfyi-archive-notes.md)
 
-## PDF Export Note (Large Graphs)
+## PDF Export
 
-Some Mermaid diagrams are large enough to be split by page breaks in PDF export.
+Run `node generate-pdf-chrome.js` to build `book/umbraco-cache-for-intelligent-dummies.pdf`.
 
-This repository now includes print helpers:
+The build has no npm dependencies — it uses only Node's built-in modules plus your
+installed Google Chrome. Markdown parsing and Mermaid diagram rendering run as
+vendored browser bundles (`vendor/markdown-it.min.js`, `vendor/mermaid.min.js`)
+executed by Chrome itself, headlessly, the same way `Cmd+P > Save as PDF` would.
+Set the `CHROME_PATH` environment variable if Chrome isn't in the default location
+for your OS.
+
+A GitHub Actions workflow (`.github/workflows/build-pdf.yml`) rebuilds the PDF
+automatically on every push to `book/**.md` and publishes it to the `latest-pdf`
+release.
+
+### Large diagrams
+
+Some Mermaid diagrams are large enough to be split by page breaks. This repository
+includes print helpers for that:
 
 - chapter-level wrappers (`.pdf-keep-together`) around large diagrams
 - a shared print stylesheet: `book/pdf-export.css`
 
-If your exporter supports custom CSS, include `book/pdf-export.css` when generating the PDF.
-
-Typical examples:
-
-- Pandoc: `pandoc input.md -o output.pdf --css book/pdf-export.css`
-- Markdown PDF tools that accept stylesheet paths: add `book/pdf-export.css` in the tool settings/options
-
-If a single diagram is taller than one page, no break rule can keep it intact; in that case split the diagram into two smaller diagrams.
+If a single diagram is taller than one printed page, no break rule can keep it
+intact — either split the diagram into two smaller ones, or replace it with a
+hand-made SVG in `book/assets/` (see `flow-cda-request.svg` for an example).
 
 ## Primary Sources
 

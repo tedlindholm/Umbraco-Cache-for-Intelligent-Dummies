@@ -45,24 +45,7 @@ You must turn it on in `appsettings.json`:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant O as ASP.NET Output Cache
-    participant W as Umbraco WebsiteOutputCachePolicy
-    participant R as Razor Pipeline
-
-    U->>O: Request /news
-    O->>W: Ask if request is cacheable
-    alt Cache hit
-        O-->>U: Return cached HTML
-    else Cache miss
-        W->>R: Allow normal rendering
-        R-->>O: Rendered HTML response
-        O-->>U: Return HTML
-        O->>O: Store HTML if policy allows
-    end
-```
+![Website output-cache request flow showing a user request, the ASP.NET output cache policy check, a cache-hit shortcut, and a cache-miss path through Razor rendering](./assets/diagram-website-output-caching-01.svg)
 
 </div>
 
@@ -146,13 +129,7 @@ In other words:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart LR
-    A["Page: /team"] -->|references| B["Member photo / media item"]
-    B --> C["Media changes"]
-    C --> D["Media cache refresher notification"]
-    D --> E["Related pages evicted from website output cache"]
-```
+![Media-reference invalidation flow showing a cached team page that references a member photo, the media change event, and the refresher evicting the related page output-cache entry](./assets/diagram-website-output-caching-02.svg)
 
 </div>
 
@@ -285,26 +262,7 @@ The backoffice tree "Delete" first moves an item to the recycle bin. That is not
 
 A permanent delete is different. Emptying the recycle bin, or calling `Delete()` programmatically, fires the eviction with the content already gone. At that point `GetById` returns null and the type can no longer be checked.
 
-<div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
-
-```mermaid
-flowchart TD
-  A["Editor chooses Delete in tree"] --> B["MoveToRecycleBin()"]
-  B --> C["Content still exists\nTrashed/masked, not literally unpublished"]
-  C --> D["ContentCacheRefresherNotification"]
-  D --> E["Custom eviction provider runs"]
-  E --> F["GetById(context.ContentKey) finds content\nType can be checked"]
-
-  G["Empty recycle bin\nor programmatic Delete()"] --> H["Content row is deleted"]
-  H --> I["ContentCacheRefresherNotification"]
-  I --> J["Custom eviction provider runs"]
-  J --> K["GetById(context.ContentKey) returns null\nType cannot be checked"]
-
-  F --> L["Evict latest-news only for newsArticle"]
-  K --> M["Evict latest-news conservatively"]
-```
-
-</div>
+![Deleting an item takes one of two paths. A tree "Delete" moves it to the recycle bin, so it still exists and its type can be checked before deciding whether to evict latest-news. Emptying the bin, or a programmatic Delete(), removes the row immediately, so GetById returns null and the eviction provider evicts latest-news conservatively rather than risk missing a change.](./assets/flow-delete-eviction.svg)
 
 The example handles both paths by evicting `latest-news` whenever the changed item is a `newsArticle` *or* can no longer be resolved. Evicting on an unresolvable change is deliberately conservative: it is safer for a derived surface to rebuild once too often than to keep rendering an item that no longer exists.
 

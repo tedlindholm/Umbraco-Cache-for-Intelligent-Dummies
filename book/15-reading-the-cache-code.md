@@ -113,14 +113,7 @@ When something changes on one server, `DistributedCache`[^15-distributed] picks 
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart LR
-    A["Content saved"] --> B["DistributedCache.Refresh()"]
-    B --> C["IServerMessenger.ExecuteMethodOnAllServers()"]
-    C --> D["Each server: ICacheRefresher.Refresh(id)"]
-    D --> E["Server A clears own HybridCache entry"]
-    D --> F["Server B clears own HybridCache entry"]
-```
+![Content-change invalidation flow showing DistributedCache queueing a refresh, IServerMessenger broadcasting it, and each server running ICacheRefresher locally](./assets/diagram-reading-the-cache-code-01.svg)
 
 </div>
 
@@ -177,12 +170,7 @@ Instead, Umbraco uses a two-step chain:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["ContentPublishingNotification fired"] --> B["ContentTreeChangeDistributedCacheNotificationHandler"]
-    B --> C["DistributedCache.RefreshContentCache()"]
-    C --> D["ContentCacheRefresher.Refresh() runs on each server"]
-```
+![ContentPublishingNotification fired diagram](./assets/diagram-reading-the-cache-code-02.svg)
 
 </div>
 
@@ -243,16 +231,7 @@ Here is the layered structure:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["IPublishedContentCache"] --> B["DocumentCache"]
-    B --> C["IDocumentCacheService / DocumentCacheService"]
-    C --> D["Microsoft HybridCache"]
-    D --> E["IMemoryCache (local hot tier)"]
-    D --> F["IDistributedCache (optional Redis etc.)"]
-    C --> G["IDatabaseCacheRepository"]
-    G --> H["umbracoContentNu table"]
-```
+![IPublishedContentCache diagram](./assets/diagram-reading-the-cache-code-03.svg)
 
 </div>
 
@@ -368,54 +347,7 @@ When you need to understand a specific cache behaviour, start here:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    subgraph "Application Cache"
-        AC1["IAppCache"]
-        AC2["IAppPolicyCache"]
-        AC3["IRequestCache"]
-        AC4["ObjectCacheAppCache (RuntimeCache)"]
-        AC5["DictionaryAppCache (RequestCache)"]
-        AC1 --> AC2 --> AC4
-        AC1 --> AC3 --> AC5
-    end
-
-    subgraph "Published Cache"
-        PC1["ICacheManager"]
-        PC2["IPublishedContentCache"]
-        PC3["IPublishedMediaCache"]
-        PC4["IPublishedMemberCache"]
-        PC5["IDomainCache"]
-        PC1 --> PC2 & PC3 & PC4 & PC5
-    end
-
-    subgraph "HybridCache Impl"
-        HC1["DocumentCache"]
-        HC2["DocumentCacheService"]
-        HC3["MS HybridCache"]
-        HC4["DatabaseCacheRepository"]
-        HC5["IContentCacheDataSerializer"]
-        PC2 --> HC1 --> HC2 --> HC3
-        HC2 --> HC4
-        HC2 --> HC5
-    end
-
-    subgraph "Invalidation"
-        INV1["DistributedCache"]
-        INV2["IServerMessenger"]
-        INV3["ICacheRefresher"]
-        INV4["Distributed Notification Handlers"]
-        INV4 --> INV1 --> INV2 --> INV3
-        INV3 --> HC2
-    end
-
-    subgraph "Output Cache"
-        OC1["IWebsiteOutputCacheManager"]
-        OC2["WebsiteDocumentOutputCacheEvictionHandler"]
-        OC3["IWebsiteOutputCacheTagProvider"]
-        INV4 --> OC2 --> OC1
-    end
-```
+![Layered v17 cache type map showing application cache, published-cache facade, Hybrid Cache implementation, invalidation path, and output-cache eviction path with separate read, refresh, and eviction lanes](./assets/diagram-reading-the-cache-code-04.svg)
 
 </div>
 

@@ -1,0 +1,60 @@
+<svg viewBox="0 0 624 948" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+  <defs>
+    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#667eea"/>
+      <stop offset="100%" stop-color="#764ba2"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#667eea" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9aa0c4"/>
+    </marker>
+  </defs>
+  <rect width="624" height="948" fill="white"/>
+<rect x="-4" y="34" width="104" height="44" rx="10" fill="#f3f4fb" filter="url(#soft)"/>
+<text x="48" y="61" text-anchor="middle" font-size="12" font-weight="600" fill="#2f3142">Request</text>
+<path d="M48,78 V914" stroke="#dde1f2" stroke-width="2" stroke-dasharray="6 6"/>
+<rect x="128" y="34" width="104" height="44" rx="10" fill="#f3f4fb" filter="url(#soft)"/>
+<text x="180" y="61" text-anchor="middle" font-size="12" font-weight="600" fill="#2f3142">Converted object cache</text>
+<path d="M180,78 V914" stroke="#dde1f2" stroke-width="2" stroke-dasharray="6 6"/>
+<rect x="260" y="34" width="104" height="44" rx="10" fill="#f3f4fb" filter="url(#soft)"/>
+<text x="312" y="61" text-anchor="middle" font-size="12" font-weight="600" fill="#2f3142">HybridCache</text>
+<path d="M312,78 V914" stroke="#dde1f2" stroke-width="2" stroke-dasharray="6 6"/>
+<rect x="392" y="34" width="104" height="44" rx="10" fill="#f3f4fb" filter="url(#soft)"/>
+<text x="444" y="61" text-anchor="middle" font-size="12" font-weight="600" fill="#2f3142">Database cache repository</text>
+<path d="M444,78 V914" stroke="#dde1f2" stroke-width="2" stroke-dasharray="6 6"/>
+<rect x="524" y="34" width="104" height="44" rx="10" fill="#f3f4fb" filter="url(#soft)"/>
+<text x="576" y="61" text-anchor="middle" font-size="12" font-weight="600" fill="#2f3142">Published content factory</text>
+<path d="M576,78 V914" stroke="#dde1f2" stroke-width="2" stroke-dasharray="6 6"/>
+<path d="M48,118 H180" stroke="#9aa0c4" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<text x="114" y="107" text-anchor="middle" font-size="11" font-weight="400" fill="#2f3142">Get by key</text>
+<rect x="26" y="145" width="572" height="34" rx="8" fill="white" stroke="#dde1f2"/>
+<text x="40" y="166" font-size="11" font-weight="700" fill="#667eea">ALT</text>
+<text x="312" y="166" text-anchor="middle" font-size="11" font-weight="400" fill="#6b708c">L0 hit</text>
+<path d="M180,216 H48" stroke="#9aa0c4" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#arrow)"/>
+<text x="114" y="205" text-anchor="middle" font-size="11" font-weight="400" fill="#2f3142">Return IPublishedContent</text>
+<rect x="26" y="243" width="572" height="34" rx="8" fill="white" stroke="#dde1f2"/>
+<text x="40" y="264" font-size="11" font-weight="700" fill="#667eea">ELSE</text>
+<text x="312" y="264" text-anchor="middle" font-size="11" font-weight="400" fill="#6b708c">L0 miss</text>
+<path d="M48,314 H312" stroke="#9aa0c4" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<text x="180" y="303" text-anchor="middle" font-size="11" font-weight="400" fill="#2f3142">Get serialised node</text>
+<rect x="26" y="341" width="572" height="34" rx="8" fill="white" stroke="#dde1f2"/>
+<text x="40" y="362" font-size="11" font-weight="700" fill="#667eea">ALT</text>
+<text x="312" y="362" text-anchor="middle" font-size="11" font-weight="400" fill="#6b708c">HybridCache hit</text>
+<path d="M312,412 H576" stroke="#9aa0c4" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#arrow)"/>
+<text x="444" y="401" text-anchor="middle" font-size="11" font-weight="400" fill="#2f3142">ContentCacheNode</text>
+<rect x="26" y="439" width="572" height="34" rx="8" fill="white" stroke="#dde1f2"/>
+<text x="40" y="460" font-size="11" font-weight="700" fill="#667eea">ELSE</text>
+<text x="312" y="460" text-anchor="middle" font-size="11" font-weight="400" fill="#6b708c">HybridCache miss</text>
+<path d="M312,510 H444" stroke="#9aa0c4" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<text x="378" y="499" text-anchor="middle" font-size="11" font-weight="400" fill="#2f3142">Load source node</text>
+<path d="M444,564 H312" stroke="#9aa0c4" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#arrow)"/>
+<text x="378" y="553" text-anchor="middle" font-size="11" font-weight="400" fill="#2f3142">ContentCacheNode</text>
+<path d="M312,618 H576" stroke="#9aa0c4" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#arrow)"/>
+<text x="444" y="607" text-anchor="middle" font-size="11" font-weight="400" fill="#2f3142">ContentCacheNode</text>
+<path d="M576,686 H180" stroke="#9aa0c4" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#arrow)"/>
+<text x="378" y="675" text-anchor="middle" font-size="11" font-weight="400" fill="#2f3142">Store converted object</text>
+<path d="M180,740 H48" stroke="#9aa0c4" stroke-width="2" stroke-dasharray="5 5" fill="none" marker-end="url(#arrow)"/>
+<text x="114" y="729" text-anchor="middle" font-size="11" font-weight="400" fill="#2f3142">Return IPublishedContent</text>
+</svg>

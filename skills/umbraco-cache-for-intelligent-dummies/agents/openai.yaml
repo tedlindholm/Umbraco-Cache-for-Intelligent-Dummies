@@ -1,0 +1,4 @@
+interface:
+  display_name: "Umbraco Cache Guide"
+  short_description: "Guide Umbraco cache book and debugging"
+  default_prompt: "Use $umbraco-cache-for-intelligent-dummies to look up the relevant GitHub book chapter for this Umbraco cache book, research, or debugging task."

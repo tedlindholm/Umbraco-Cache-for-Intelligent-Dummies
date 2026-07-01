@@ -35,13 +35,7 @@ The old NuCache `.db`-file complaints, by contrast, are now historical. They are
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-xychart-beta
-    title "Issue concentration by theme (survey snapshot)"
-    x-axis ["URL/routing", "Cold start/migration", "Distributed invalidation", "HybridCache internals", "Historical NuCache"]
-    y-axis "Issue count" 0 --> 6
-    bar [5, 3, 4, 4, 2]
-```
+![Bar chart showing issue concentration by cache-related theme, including URL routing, cold start and migration, distributed invalidation, HybridCache internals, and historical NuCache](./assets/diagram-lessons-from-the-issue-tracker-01.svg)
 
 </div>
 

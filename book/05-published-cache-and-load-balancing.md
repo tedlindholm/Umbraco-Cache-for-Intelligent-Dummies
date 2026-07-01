@@ -12,14 +12,7 @@ The published content cache is easiest to understand as a layered lookup path: l
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Your code or Razor asks for published content"] --> B["Published object fast cache in process"]
-    B -->|miss| C["HybridCache entry"]
-    C -->|miss| D["Database-backed cache source"]
-    D --> C
-    C --> B
-```
+![Published-content lookup flow showing code or Razor asking for content, the in-process published-object cache, HybridCache, and the database-backed cache source on a miss](./assets/diagram-published-cache-and-load-balancing-01.svg)
 
 </div>
 
@@ -54,16 +47,7 @@ One of the most helpful ideas from the HybridCache presentation is that Umbraco 
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart LR
-    A["Published request"] --> B["Routing and navigation"]
-    A --> C["Published content payloads"]
-    B --> D["Usually kept hot in memory"]
-    C --> E["Hot or cold depending on demand"]
-    E --> F["L1 memory"]
-    E --> G["L2 distributed cache"]
-    E --> H["Database-backed cache source"]
-```
+![Published request split showing routing and navigation staying hot in memory while published content payloads may hit L1 memory, L2 distributed cache, or the database-backed cache source](./assets/diagram-published-cache-and-load-balancing-02.svg)
 
 </div>
 
@@ -126,18 +110,7 @@ Important consequence:
 
 - if your seed logic is dynamic, new matching content will not join that memoised seed set until the seed keys are reset or the application restarts
 
-<div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
-
-```mermaid
-flowchart TD
-    A["Server starts"] --> B["Run seed providers"]
-    B --> C["Cache seed keys"]
-    C --> D["Warm initial entries"]
-    E["New content created later"] -.-> F["Not in cached seed set yet"]
-    F -.-> G["Will only join seed set after restart"]
-```
-
-</div>
+![At startup, the server runs seed providers, computes the seed-key set, memoises it, and warms initial cache entries. Content created later doesn't match that already-memoised seed set, so it only joins the seed set after a restart or a manual seed-key reset.](./assets/flow-cache-seeding.svg)
 
 ## How a document lookup works in v17
 
@@ -174,18 +147,7 @@ That does not always mean "add another cache".
 
 Sometimes it means "use an index instead of traversal", which is exactly where Examine fits. See [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md) for the full comparison.
 
-<div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
-
-```mermaid
-flowchart TD
-    A["container.Children().Where(...)"] --> B["Resolve child keys"]
-    B --> C["Load child content one by one"]
-    C --> D["Resolve references like author/category/image"]
-    D --> E["More cache lookups"]
-    E --> F["Possible L2 or database work"]
-```
-
-</div>
+![A single container.Children().Where(...) call resolves child keys, loads child content one by one, resolves references like author/category/image, and does another cache lookup per reference — so one call in the code can mean N cache round trips and possible L2 or database work at runtime.](./assets/flow-traversal-cost.svg)
 
 ## Invalidation after content changes
 
@@ -216,21 +178,7 @@ That means:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-sequenceDiagram
-    participant A as Server A
-    participant M as IServerMessenger
-    participant B as Server B
-    participant C as Server C
-
-    A->>A: Content published
-    A->>M: Queue cache refresher instruction
-    M-->>A: Execute locally
-    M-->>B: Execute refresher
-    M-->>C: Execute refresher
-    B->>B: Clear local caches
-    C->>C: Clear local caches
-```
+![Load-balanced refresh sequence showing Server A publishing content, IServerMessenger queueing a cache refresher instruction, and servers A, B, and C clearing local caches](./assets/diagram-published-cache-and-load-balancing-03.svg)
 
 </div>
 
@@ -290,20 +238,7 @@ The HybridCache presentation material gives a useful warning for beginners:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-quadrantChart
-    title "Where the Cost Moved"
-    x-axis "Lower startup/runtime simplicity" --> "Higher startup/runtime simplicity"
-    y-axis "Lower cost pressure" --> "Higher cost pressure"
-    quadrant-1 "Watch carefully"
-    quadrant-2 "Worth optimising"
-    quadrant-3 "Usually fine"
-    quadrant-4 "Helpful defaults"
-    "Old all-in-memory startup": [0.2, 0.9]
-    "Seeded hot content": [0.75, 0.35]
-    "Cold traversal with references": [0.35, 0.8]
-    "Single content lookup": [0.8, 0.25]
-```
+![Quadrant chart comparing where cache cost moved, including old all-in-memory startup, seeded hot content, cold traversal with references, and single content lookup](./assets/diagram-published-cache-and-load-balancing-04.svg)
 
 </div>
 

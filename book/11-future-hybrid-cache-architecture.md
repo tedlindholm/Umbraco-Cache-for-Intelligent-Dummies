@@ -81,23 +81,7 @@ So when we use Microsoft sources, we should keep filtering them through one ques
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart LR
-    A["Microsoft HybridCache"] --> B["Primary memory cache"]
-    A --> C["Optional secondary distributed cache"]
-    A --> D["GetOrCreateAsync read-through pattern"]
-    A --> E["Stampede protection"]
-    A --> F["Tags"]
-    A --> G["Serialiser hooks and entry options"]
-
-    H["Umbraco PublishedCache.HybridCache"] --> I["ContentCacheNode payloads"]
-    H --> J["Database-backed cache source"]
-    H --> K["Document media member element and domain services"]
-    H --> L["Seed-key providers and startup seeding"]
-    H --> M["Draft and published key separation"]
-    H --> N["Notification-driven refresh rebuild and invalidation"]
-    H --> O["Local converted-object L0 caches"]
-```
+![Two-column comparison: Microsoft HybridCache provides primary memory cache, optional secondary distributed cache, the GetOrCreateAsync read-through pattern, stampede protection, tags, and serialiser hooks. Umbraco's PublishedCache.HybridCache builds on top with ContentCacheNode payloads, a database-backed cache source, document/media/member/element/domain services, seed-key providers, draft/published key separation, notification-driven refresh and invalidation, and local converted-object L0 caches.](./assets/hybridcache-vs-umbraco-layers.svg)
 
 </div>
 
@@ -202,24 +186,7 @@ These flags map directly onto Umbraco concerns. A background warm-up that should
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-sequenceDiagram
-    participant A as Caller A
-    participant B as Caller B
-    participant C as Caller C
-    participant H as HybridCache
-    participant F as Factory (expensive)
-
-    A->>H: GetOrCreateAsync("k")
-    B->>H: GetOrCreateAsync("k")
-    C->>H: GetOrCreateAsync("k")
-    Note over H: One miss, three callers
-    H->>F: Invoke factory ONCE (combined cancellation)
-    F-->>H: Value
-    H-->>A: Value
-    H-->>B: Value
-    H-->>C: Value
-```
+![Sequence diagram showing three callers sharing one HybridCache factory run for the same key](./assets/diagram-future-hybrid-cache-architecture-02.svg)
 
 </div>
 
@@ -235,22 +202,7 @@ This is the single most important Microsoft detail for understanding Umbraco's t
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-sequenceDiagram
-    participant W as Writer
-    participant H as HybridCache
-    participant S as Tag timestamps
-    participant R as Reader
-
-    W->>H: RemoveByTagAsync("ct:1050")
-    H->>S: Record "ct:1050 invalidated @ T"
-    Note over H: Nothing is physically deleted
-    R->>H: GetOrCreateAsync(key tagged "ct:1050")
-    H->>S: Entry created before T?
-    S-->>H: Yes → treat as miss
-    H->>H: Run factory, store fresh value
-    H-->>R: Fresh value
-```
+![Sequence diagram showing HybridCache tag invalidation as a timestamp check that treats older entries as misses](./assets/diagram-future-hybrid-cache-architecture-03.svg)
 
 </div>
 
@@ -366,17 +318,7 @@ If Redis is wired as the secondary cache, **Azure Monitor** exposes `cachehits`,
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    S["Cache symptom"] --> Q{"What kind?"}
-    Q -- "RAM growth" --> A["dotnet-gcdump + dotnet-counters<br/>(GC / LOH size)"]
-    Q -- "Slow requests" --> B["dotnet-trace<br/>(deserialise vs factory vs L2)"]
-    Q -- "Node not caching" --> C["ILogger<br/>(payload/key limit warnings)"]
-    Q -- "Too many DB hits" --> D["EF Core query-cache metrics<br/>+ Redis hit/miss (Azure Monitor)"]
-    Q -- "Stale on one server" --> E["Umbraco's own tools:<br/>umbracoCacheInstruction + refresher logs"]
-
-    style E fill:#fee,stroke:#a55
-```
+![Troubleshooting map from cache symptoms to diagnostic tools, separating Microsoft process metrics from Umbraco refresher logs](./assets/diagram-future-hybrid-cache-architecture-04.svg)
 
 </div>
 
@@ -400,20 +342,7 @@ Umbraco's published cache is the opposite: it is entirely content-shaped. Site c
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Your template / controller<br/>umbracoHelper.Content(id)"] --> B["ICacheManager"]
-    B --> C["IPublishedContentCache (DocumentCache)"]
-    C --> D["IDocumentCacheService / DocumentCacheService"]
-    D --> E["L0 ConvertedPublishedContentCache"]
-    D --> F["Microsoft HybridCache&nbsp;&nbsp;(generic, string-keyed)"]
-    D --> G["IDatabaseCacheRepository"]
-    F --> H["IMemoryCache (L1)"]
-    F --> I["IDistributedCache (optional L2)"]
-    G --> J["umbracoContentNu table"]
-
-    style F fill:#eef,stroke:#557
-```
+![Umbraco published-cache interface stack from template code through ICacheManager and DocumentCacheService down to HybridCache and the database cache repository](./assets/diagram-future-hybrid-cache-architecture-05.svg)
 
 </div>
 
@@ -534,15 +463,7 @@ Read together, these snippets are the whole thesis of the chapter in miniature: 
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Request for document or element"] --> B["L0 converted-object cache"]
-    B -->|miss| C["HybridCache entry"]
-    C -->|miss| D["Database-backed cache source"]
-    D --> C
-    C --> B
-    B --> E["Return IPublishedContent or IPublishedElement"]
-```
+![Lookup flow for a document or element through the L0 converted-object cache, HybridCache, and database-backed cache source](./assets/diagram-future-hybrid-cache-architecture-06.svg)
 
 </div>
 
@@ -622,30 +543,7 @@ The document lookup path is roughly:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-sequenceDiagram
-    participant R as Request
-    participant L0 as Converted object cache
-    participant H as HybridCache
-    participant DB as Database cache repository
-    participant F as Published content factory
-
-    R->>L0: Get by key
-    alt L0 hit
-        L0-->>R: Return IPublishedContent
-    else L0 miss
-        R->>H: Get serialised node
-        alt HybridCache hit
-            H-->>F: ContentCacheNode
-        else HybridCache miss
-            H->>DB: Load source node
-            DB-->>H: ContentCacheNode
-            H-->>F: ContentCacheNode
-        end
-        F-->>L0: Store converted object
-        L0-->>R: Return IPublishedContent
-    end
-```
+![Read-through sequence showing an L0 miss, HybridCache lookup, database cache source fallback, and converted-object storage](./assets/diagram-future-hybrid-cache-architecture-07.svg)
 
 </div>
 
@@ -715,14 +613,7 @@ The key idea is simple:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Application starting"] --> B["Collect seed keys from providers"]
-    B --> C["Batch keys"]
-    C --> D["Skip keys already in HybridCache"]
-    D --> E["Fetch uncached nodes from database cache source"]
-    E --> F["Store as seed entries"]
-```
+![Startup seeding flow collecting seed keys, batching them, skipping already cached keys, fetching uncached nodes, and storing seed entries](./assets/diagram-future-hybrid-cache-architecture-08.svg)
 
 </div>
 
@@ -826,21 +717,7 @@ That is an excellent example of a subtle bug being solved at the architecture le
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-sequenceDiagram
-    participant A as Request A
-    participant G as Cache generation
-    participant P as Publish or refresh
-    participant C as Cache
-
-    A->>G: Capture generation 10
-    A->>C: Miss, start read-through
-    P->>C: Refresh entry
-    P->>G: Bump generation to 11
-    A->>G: Re-check generation
-    G-->>A: Generation changed
-    A-->>C: Do not write stale snapshot back
-```
+![Generation guard sequence preventing an older read-through operation from writing a stale snapshot after a publish refresh](./assets/diagram-future-hybrid-cache-architecture-09.svg)
 
 </div>
 
@@ -879,16 +756,7 @@ This is a very pragmatic trade-off: correctness still matters, but so do availab
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Content type structural change"] --> B{"Immediate or deferred?"}
-    B -- "Immediate" --> C["Rebuild database cache source now"]
-    B -- "Deferred" --> D["Queue rebuild IDs"]
-    D --> E["Background worker drains IDs"]
-    E --> F["Rebuild affected source cache"]
-    F --> G["Clear matching HybridCache tags"]
-    G --> H["Clear matching converted-object cache"]
-```
+![A content type structural change triggers either an immediate blocking rebuild of the database cache source, or a deferred path: queue rebuild IDs, a background worker drains them and rebuilds the affected source cache, then clears matching HybridCache tags and converted-object cache entries.](./assets/flow-rebuild.svg)
 
 </div>
 

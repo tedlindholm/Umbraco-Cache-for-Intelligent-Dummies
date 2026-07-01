@@ -160,14 +160,7 @@ all in the same codebase and wonder what is going on.
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Old world"] --> B["NuCache as the published-content cache architecture"]
-    B --> C["Names settings and APIs spread across the codebase"]
-    C --> D["New world"]
-    D --> E["Hybrid Cache becomes the active implementation"]
-    E --> F["Some old NuCache and PublishedSnapshot names remain"]
-```
+![Old world diagram](./assets/diagram-nucache-vs-hybrid-cache-01.svg)
 
   </div>
 
@@ -261,21 +254,7 @@ To summarise:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart LR
-  subgraph OLD["NuCache-era mental model"]
-    O1["Large in-memory published snapshot"] --> O2["Tree traversal often assumes hot content"]
-  end
-
-  subgraph NEW["Hybrid Cache-era mental model"]
-    N1["L0 converted-object cache"] --> N2["HybridCache entry"]
-    N2 --> N3["Database-backed cache source"]
-    N4["Distributed invalidation"] --> N1
-    N4 --> N2
-  end
-
-  OLD -. terminology lingers .-> NEW
-```
+![subgraph OLD[ diagram](./assets/diagram-nucache-vs-hybrid-cache-02.svg)
 
 </div>
 

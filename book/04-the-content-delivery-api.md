@@ -110,28 +110,7 @@ Umbraco handles this through its relation system. When content is saved with a p
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart LR
-    subgraph Content tree
-        A["Page A\n(has picker → B)"]
-        B["Page B\n(published)"]
-    end
-
-    subgraph Relations table
-        R["RelatedDocument\nparent=A, child=B"]
-    end
-
-    subgraph CDA output cache
-        CA["cached response for A\ntag: umb-dapi-content-A"]
-        CB["cached response for B\ntag: umb-dapi-content-B"]
-    end
-
-    A -- picker saves relation --> R
-    B -- published --> EH["DeliveryApiDocumentOutputCacheEvictionHandler"]
-    EH -- EvictByTag umb-dapi-content-B --> CB
-    EH -- GetByChildId B → finds parent A --> R
-    R -- EvictByTag umb-dapi-content-A --> CA
-```
+![Relation-based CDA output-cache eviction showing Page A referencing Page B, the RelatedDocument relation, the eviction handler receiving a publish for B, and cached responses for both B and the referencing Page A being evicted by tag](./assets/diagram-the-content-delivery-api-01.svg)
 
 </div>
 

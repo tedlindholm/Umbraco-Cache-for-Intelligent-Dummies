@@ -34,16 +34,7 @@ Storage Providers plug into that whole path, and the three cache layers below ea
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart LR
-    A["Editor uploads media"] --> B["Blob storage or file storage"]
-    B --> C["Blob metadata cache"]
-    B --> D["ImageSharp cache"]
-    D --> E["CDN edge cache"]
-    C --> F["Umbraco request path"]
-    D --> F
-    E --> G["Visitor gets image quickly"]
-```
+![Layered media-cache diagram showing an editor upload, durable blob or file storage, origin-side blob metadata and ImageSharp caches, the CDN edge cache, and the visitor response](./assets/diagram-storage-providers-and-media-caching-01.svg)
 
 </div>
 
@@ -67,23 +58,7 @@ For image-processing URLs, the CDN configuration should treat each unique URL, i
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-sequenceDiagram
-    participant V as Visitor
-    participant CDN as CDN
-    participant U as Umbraco origin
-    participant M as Media storage
-
-    V->>CDN: Request media URL
-    alt CDN hit
-        CDN-->>V: Return cached response
-    else CDN miss
-        CDN->>U: Request media from origin
-        U->>M: Read original media or generated variant
-        U-->>CDN: Return response
-        CDN-->>V: Cache and return response
-    end
-```
+![Media request sequence showing a visitor hitting the CDN, a CDN hit returning immediately, and a CDN miss falling back to Umbraco origin and media storage before caching the response](./assets/diagram-storage-providers-and-media-caching-02.svg)
 
 </div>
 
@@ -133,15 +108,7 @@ The stale-data risk mainly comes from writes that happen *outside* the current i
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Request needs blob metadata"] --> B{"Cache hit?"}
-    B -- "yes" --> C["Return cached size and last modified"]
-    B -- "no" --> D["Call Azure GetProperties()"]
-    D --> E["Store result in HybridCache"]
-    E --> F["Return metadata"]
-    G["AddFile DeleteFile DeleteDirectory"] --> H["Invalidate affected metadata key"]
-```
+![Blob metadata cache flow showing cache hit and miss paths, Azure GetProperties fallback, HybridCache storage, and metadata-key invalidation after file operations](./assets/diagram-storage-providers-and-media-caching-03.svg)
 
 </div>
 
@@ -180,15 +147,7 @@ ImageSharp cache:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Original media blob"] --> B["Blob metadata cache in HybridCache"]
-    A --> C["ImageSharp generates variant"]
-    C --> D["Variant stored in blob-based image cache"]
-    D --> E["CDN caches final response"]
-    B --> F["Origin can answer faster"]
-    E --> G["Visitors avoid origin entirely on hit"]
-```
+![Media-cache layer flow showing original blob storage feeding blob metadata cache, ImageSharp variants, blob-based image cache, CDN cache, and faster visitor responses](./assets/diagram-storage-providers-and-media-caching-04.svg)
 
 </div>
 

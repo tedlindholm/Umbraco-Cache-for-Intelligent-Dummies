@@ -35,17 +35,7 @@ In Umbraco 17, cache busting is mostly driven by:[^04-core]
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart TD
-    A["Editor publishes content"] --> B["Umbraco creates cache refresher payload"]
-    B --> C["DistributedCache queues refresh"]
-    C --> D["IServerMessenger broadcasts instruction"]
-    D --> E["Each server runs the refresher locally"]
-    E --> F["Published content cache is refreshed or removed"]
-    E --> G["Routing and navigation caches are updated"]
-    E --> H["Website output cache entries are evicted by tag"]
-    E --> I["Related pages are evicted too"]
-```
+![Core invalidation flow showing an editor publish creating one refresher payload, DistributedCache queueing it, IServerMessenger broadcasting it, each server running the refresher locally, and four cache outcomes fanning out beneath](./assets/diagram-cache-busting-and-invalidation-01.svg)
 
 </div>
 
@@ -187,15 +177,7 @@ What may need busting?
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-flowchart LR
-    A["Move /products/shoes"] --> B["RefreshBranch payload"]
-    B --> C["Refresh or remove document cache for branch"]
-    B --> D["Update URL segment and alias caches"]
-    B --> E["Update navigation tree"]
-    B --> F["Evict HTML by content key tag"]
-    B --> G["Evict descendant HTML by ancestor tag"]
-```
+![Branch-move invalidation flow showing a RefreshBranch payload refreshing or removing document cache for the branch, updating URL and navigation caches, and evicting HTML by content and ancestor tags](./assets/diagram-cache-busting-and-invalidation-02.svg)
 
 </div>
 
@@ -214,26 +196,7 @@ The exact payload depends on the operation, but a normal already-published artic
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-```mermaid
-sequenceDiagram
-    participant E as Editor
-    participant B as Backoffice
-    participant D as DistributedCache
-    participant N1 as Server A
-    participant N2 as Server B
-    participant P as Published content cache
-    participant O as Output cache
-
-    E->>B: Publish article 1111...
-    B->>D: ContentCacheRefresher RefreshNode
-    D->>N1: Run refresher locally
-    D->>N2: Broadcast same refresh
-    N1->>P: Refresh or remove article entry
-    N2->>P: Refresh or remove article entry
-    N1->>O: Evict HTML tagged with article key
-    N2->>O: Evict HTML tagged with article key
-    O->>O: Evict related pages, such as homepage 3333...
-```
+![Load-balanced publish sequence showing an editor publishing an article, DistributedCache broadcasting the refresh to Server A and Server B, and each server evicting content and output-cache entries](./assets/diagram-cache-busting-and-invalidation-03.svg)
 
 </div>
 
@@ -307,6 +270,48 @@ They ensure:
 - the refresh instruction is broadcast
 - each server runs the refresher locally
 - each server clears its own stale state
+
+## Focused scenario: cache busting a multi-server Delivery API
+
+Here is the API-shaped version of the same rule.
+
+Imagine this production layout:
+
+- two Umbraco front-end servers behind a load balancer
+- the Content Delivery API enabled on both servers
+- the CDA output cache enabled, so repeated JSON responses can be served quickly
+- a CDN, static front end, mobile app, or JavaScript client consuming those JSON responses
+
+When an editor publishes content on server A, Umbraco has two different jobs.
+
+First, it must keep **Umbraco's own API responses** trustworthy:
+
+1. The publish creates a `ContentCacheRefresher` instruction.
+2. `DistributedCache` and `IServerMessenger` make server B hear the same instruction.
+3. Each server refreshes or removes its own local published-content state.
+4. The Delivery API output-cache eviction handlers listen to the refresher notification.
+5. Each server evicts its own cached JSON responses by tag, relation, or broad `AllTag` fallback, as explained in [Chapter 4](./04-the-content-delivery-api.md).[^04-cda-multiserver]
+
+Second, it must not pretend that **downstream caches** heard that instruction.
+
+Once the JSON response has left Umbraco, the automatic pipeline stops. A CDN object, a statically generated page, a service worker cache, a mobile-app cache, or a separate front-end data cache will not run `ContentCacheRefresher`. Those layers need their own freshness rule:
+
+- short enough HTTP cache headers for data that can change often
+- versioned URLs or cache keys where URL identity is the busting mechanism
+- a content-published webhook that tells the front end to rebuild, purge, or refetch
+- a CDN purge call when the edge is allowed to keep JSON or generated output for longer
+
+That gives the beginner-friendly boundary:
+
+> Umbraco can tell every Umbraco server to stop trusting stale API responses, but it cannot tell every consumer on the internet to forget what it already cached unless you wire that signal too.
+
+The practical test is simple. After a publish in a multi-server API setup, ask three questions:
+
+1. Did every Umbraco node receive and execute the refresher instruction?
+2. Did the CDA output cache on every node evict the JSON responses that depended on the changed content?
+3. Did the downstream front end, CDN, or API client receive its own purge, rebuild, or refetch signal?
+
+If the answer to the first two is yes but the user still sees old data, the stale layer is probably outside Umbraco's in-process cache-busting pipeline.[^04-cda-multiserver]
 
 The custom-code shape is the same. Keep the cached value local, but broadcast the instruction that tells every node to clear its own copy:
 
@@ -477,6 +482,7 @@ Umbraco caching works because it is aggressive about invalidation *choreography*
 - The **change type** (`RefreshNode` / `RefreshBranch` / `Remove` / `RefreshAll`) decides how surgical or broad the busting is.
 - Output-cache eviction is **tag-based** and **dependency-aware** — the busted page is often not the page that changed.
 - On multiple servers, the whole thing rests on distributed *invalidation*: broadcast the instruction, then let every server run the refresher locally.
+- In headless/API setups, Umbraco can clear every Umbraco node's CDA output cache, but downstream consumers still need their own purge, rebuild, or refetch path.
 
 ### Three takeaways
 
@@ -509,4 +515,5 @@ Umbraco caching works because it is aggressive about invalidation *choreography*
 [^04-field-instructions]: See [F7 in the appendix](./16-appendix-sources.md#f7-distributed-cache-field-reports-v17).
 [^04-24days-edge]: See [F9 in the appendix](./16-appendix-sources.md#f9-24days-caching-field-notes) for the 24days cache-busting and CDN field notes. These articles are historical community sources, not current v17 implementation sources.
 [^04-kjac-edge]: See [F10 in the appendix](./16-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes). These repositories are community and package field examples, not primary Umbraco CMS implementation sources.
+[^04-cda-multiserver]: See [C7](./16-appendix-sources.md#c7-core-cache-types-and-refreshers), [C12](./16-appendix-sources.md#c12-distributedcache-implementation-path-v17), and [C15](./16-appendix-sources.md#c15-content-delivery-api-output-cache-implementation) for the Umbraco-side refresher and CDA output-cache pieces; see [F10](./16-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes) for downstream Delivery API/headless field examples.
 [^04-custom-refresher]: See [C7](./16-appendix-sources.md#c7-core-cache-types-and-refreshers), [C11](./16-appendix-sources.md#c11-icacherefresher-interface-path-v17), and [C12](./16-appendix-sources.md#c12-distributedcache-implementation-path-v17).
