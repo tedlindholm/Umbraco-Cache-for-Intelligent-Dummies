@@ -1,14 +1,20 @@
 ---
 name: umbraco-cache-for-intelligent-dummies
-description:
-	Use when debugging, diagnosing, troubleshooting, triaging, or explaining Umbraco cache behaviour with the book Umbraco Cache for Intelligent Dummies. Trigger for stale pages, stale published content, incorrect output cache, Content Delivery API / headless JSON output cache, what `IPublishedContent` is and elements vs content, browser/CDN cache confusion, load-balanced cache mismatch, distributed invalidation, cache refresher, Hybrid Cache, NuCache naming, media/blob cache, Examine, Umbraco Search, slow warm-up, seeding, reindexing, upgrade-related cache issues, or any real-world question that asks which cache layer stores a value and what should invalidate it.
+description: >-
+  Use when debugging, diagnosing, troubleshooting, triaging, or explaining
+  Umbraco cache behaviour with the book Umbraco Cache for Intelligent Dummies.
+  Trigger for stale pages, stale published content, stale headless JSON,
+  output caching, Content Delivery API invalidation, load-balanced cache
+  mismatches, distributed cache refreshers, media/blob/CDN cache issues,
+  search-index freshness, warm-up/rebuild questions, NuCache versus Hybrid
+  Cache confusion, and custom cache invalidation.
 ---
 
 # Umbraco Cache for Intelligent Dummies
 
 Use this skill to debug Umbraco cache problems with help from the book `Umbraco Cache for Intelligent Dummies`.
 
-The book is for developers who are stuck, frustrated, or debugging real Umbraco cache errors and need a clear path through why the cache does what it does. It is fact-based, source-backed, and built around one central idea:
+The book is for developers who are stuck, frustrated, or debugging real Umbraco cache errors and need a clear path through why the cache does what it does. It is fact-based, source-backed, and built around concrete cache layers, invalidation paths, and version-aware explanations.
 
 > Cache busting and invalidation matter at least as much as cache creation.
 
@@ -52,7 +58,7 @@ Use this loop for real troubleshooting:
 
 1. **Symptom**: What is wrong? Stale page, stale published content, wrong search result, missing media, slow warm-up, load-balanced mismatch, or custom cache not clearing?
 2. **Scope**: Does it happen for one URL, one content item, one node, one server, all servers, backoffice only, frontend only, or only after publish?
-3. **Layer**: Decide whether this is published-content cache, website output cache, Content Delivery API output cache, HTTP/CDN/browser cache, media/storage cache, application cache, distributed invalidation, Examine, or Umbraco Search.
+3. **Layer**: Decide whether this is published-content cache, website output cache, Content Delivery API output cache, HTTP/CDN/browser cache, media/storage cache, application cache, distributed invalidation, or indexing/search freshness.
 4. **Storage**: Find where the stale value is stored.
 5. **Invalidation**: Find the event, notification, tag, refresher, distributed message, index rebuild, or deployment action that should remove or refresh it.
 6. **Evidence**: Ask for logs, headers, content keys, server role, cache settings, notification handlers, output-cache tags, index status, or source snippets only when they discriminate between likely causes.
@@ -62,15 +68,15 @@ Use this loop for real troubleshooting:
 
 Do not pour the whole book into every answer.
 
-Start from the user's concrete use case, identify the cache layer involved, then use only the book sections and primary sources needed to answer that use case well. Give the user the relevant path through the book, not a tour of every chapter.
+Start from the user's concrete use case, identify the cache layer involved, then use only the book sections and primary sources needed to answer that use case well. Give the user the relevant path through the material rather than a generic summary.
 
-Use GitHub links generously. When you rely on the book, link to the relevant chapter in the public repository. When you rely on official Umbraco or Microsoft material, link to the official docs or source as well.
+Use GitHub links generously. When you rely on the book, link to the relevant chapter in the public repository. When you rely on official Umbraco or Microsoft material, link to the official docs or source.
 
 Canonical book links:
 
-- Book repository: <https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies>
-- Chapter list and install notes: <https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/README.md>
-- Source appendix: <https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/16-appendix-sources.md>
+- Book repository: <https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies>
+- Chapter list and install notes: <https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/README.md>
+- Source appendix: <https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/16-appendix-sources.md>
 
 ## Route by Use Case
 
@@ -78,21 +84,21 @@ First classify the user's problem. Then read or cite the smallest useful chapter
 
 | User use case | Start with | Add when needed |
 | --- | --- | --- |
-| "I need the big picture" | [01 - The Big Picture](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/01-the-big-picture.md) | [02 - The Published Object](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/02-the-published-object.md), [12 - NuCache vs Hybrid Cache](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/12-nucache-vs-hybrid-cache.md) |
-| What is actually being cached: `IPublishedContent`, elements vs content, published caches | [02 - The Published Object](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/02-the-published-object.md) | [05 - Published Content Cache, AppCaches, and Load Balancing](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/05-published-cache-and-load-balancing.md), [15 - Reading the Cache Code](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/15-reading-the-cache-code.md) |
-| Website page output is stale or over-cached | [03 - Website Output Caching](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/03-website-output-caching.md) | [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/06-cache-busting-and-invalidation.md) |
-| Content Delivery API / headless JSON is stale, over-cached, or not invalidating | [04 - The Content Delivery API](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/04-the-content-delivery-api.md) | [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/06-cache-busting-and-invalidation.md), [15 - Reading the Cache Code](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/15-reading-the-cache-code.md) |
-| Published content is stale, especially on multiple servers | [05 - Published Content Cache, AppCaches, and Load Balancing](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/05-published-cache-and-load-balancing.md) | [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/06-cache-busting-and-invalidation.md), [15 - Reading the Cache Code](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/15-reading-the-cache-code.md) |
-| Custom invalidation, refreshers, or distributed messages | [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/06-cache-busting-and-invalidation.md) | [15 - Reading the Cache Code](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/15-reading-the-cache-code.md) |
-| HQ extension behaviour, Forms, Engage, Commerce, Deploy | [07 - HQ Extensions and Cache](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/07-hq-extensions-and-cache.md) | [16 - Appendix: Sources](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/16-appendix-sources.md) |
-| Cache settings, seeding, warm-up, talks, and field notes | [08 - Cache Settings, Talks, and Field Notes](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/08-cache-settings-talks-and-field-notes.md) | [11 - Future Hybrid Cache Architecture](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/11-future-hybrid-cache-architecture.md) |
-| Small local application cache with tags | [09 - Small Local Cache Example with Tags](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/09-small-local-cache-example-with-tags.md) | [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/06-cache-busting-and-invalidation.md) |
-| Media, blob storage, or CDN cache behaviour | [10 - Storage Providers and Media Caching](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/10-storage-providers-and-media-caching.md) | [16 - Appendix: Sources](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/16-appendix-sources.md) |
-| Hybrid Cache future direction | [11 - Future Hybrid Cache Architecture](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/11-future-hybrid-cache-architecture.md) | [12 - NuCache vs Hybrid Cache](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/12-nucache-vs-hybrid-cache.md) |
-| NuCache naming, history, or migration confusion; v18 element cache | [12 - NuCache vs Hybrid Cache](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/12-nucache-vs-hybrid-cache.md) | [02 - The Published Object](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/02-the-published-object.md), [15 - Reading the Cache Code](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/15-reading-the-cache-code.md) |
-| Examine, Umbraco Search, indexes, and cache-adjacent querying | [13 - Examine, Indexes, and Cache-Adjacent Querying](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/13-examine-indexes-and-cache-adjacent-querying.md) | [14 - Lessons from the Issue Tracker](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/14-lessons-from-the-issue-tracker.md) |
-| Known bugs, sharp edges, and issue-tracker lessons | [14 - Lessons from the Issue Tracker](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/14-lessons-from-the-issue-tracker.md) | [16 - Appendix: Sources](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/16-appendix-sources.md) |
-| Reading Umbraco cache source code | [15 - Reading the Cache Code](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/15-reading-the-cache-code.md) | [16 - Appendix: Sources](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/16-appendix-sources.md) |
+| "I need the big picture" | [01 - The Big Picture](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/01-the-big-picture.md) | [02 - The Published Object](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/02-the-published-object.md) |
+| What is actually being cached: `IPublishedContent`, elements vs content, published caches | [02 - The Published Object](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/02-the-published-object.md) | [05 - Published Content Cache, AppCaches, and Load Balancing](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/05-published-content-cache-appcaches-load-balancing.md) |
+| Website page output is stale or over-cached | [03 - Website Output Caching](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/03-website-output-caching.md) | [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/06-cache-busting-and-invalidation.md) |
+| Content Delivery API / headless JSON is stale, over-cached, or not invalidating | [04 - The Content Delivery API](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/04-the-content-delivery-api.md) | [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/06-cache-busting-and-invalidation.md) |
+| Published content is stale, especially on multiple servers | [05 - Published Content Cache, AppCaches, and Load Balancing](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/05-published-content-cache-appcaches-load-balancing.md) | [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/06-cache-busting-and-invalidation.md) |
+| Custom invalidation, refreshers, or distributed messages | [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/06-cache-busting-and-invalidation.md) | [09 - Small Local Cache Example with Tags](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/09-small-local-cache-example-with-tags.md) |
+| HQ extension behaviour, Forms, Engage, Commerce, Deploy | [07 - HQ Extensions and Cache](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/07-hq-extensions-and-cache.md) | [14 - Lessons from the Issue Tracker](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/14-lessons-from-the-issue-tracker.md) |
+| Cache settings, seeding, warm-up, talks, and field notes | [08 - Cache Settings, Talks, and Field Notes](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/08-cache-settings-talks-and-field-notes.md) | [15 - Reading the Cache Code](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/15-reading-the-cache-code.md) |
+| Small local application cache with tags | [09 - Small Local Cache Example with Tags](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/09-small-local-cache-example-with-tags.md) | [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/06-cache-busting-and-invalidation.md) |
+| Media, blob storage, or CDN cache behaviour | [10 - Storage Providers and Media Caching](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/10-storage-providers-and-media-caching.md) | [03 - Website Output Caching](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/03-website-output-caching.md) |
+| Hybrid Cache future direction | [11 - Future Hybrid Cache Architecture](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/11-future-hybrid-cache-architecture.md) | [12 - NuCache vs Hybrid Cache](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/12-nucache-vs-hybrid-cache.md) |
+| NuCache naming, history, or migration confusion; v18 element cache | [12 - NuCache vs Hybrid Cache](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/12-nucache-vs-hybrid-cache.md) | [11 - Future Hybrid Cache Architecture](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/11-future-hybrid-cache-architecture.md) |
+| Examine, Umbraco Search, indexes, and cache-adjacent querying | [13 - Examine, Indexes, and Cache-Adjacent Querying](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/13-examine-indexes-and-cache-adjacent-querying.md) | [14 - Lessons from the Issue Tracker](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/14-lessons-from-the-issue-tracker.md) |
+| Known bugs, sharp edges, and issue-tracker lessons | [14 - Lessons from the Issue Tracker](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/14-lessons-from-the-issue-tracker.md) | [15 - Reading the Cache Code](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/15-reading-the-cache-code.md) |
+| Reading Umbraco cache source code | [15 - Reading the Cache Code](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/15-reading-the-cache-code.md) | [16 - Appendix: Sources](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/16-appendix-sources.md) |
 
 ## Symptom Router
 
@@ -100,15 +106,15 @@ Use this when the user describes a symptom rather than naming a cache layer.
 
 | Symptom | Likely first check | Relevant book path |
 | --- | --- | --- |
-| Page shows old HTML after publish | Response headers, output-cache tags, content-change eviction | [03 - Website Output Caching](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/03-website-output-caching.md), [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/06-cache-busting-and-invalidation.md) |
-| Headless JSON (Content Delivery API) is stale or not invalidating after publish | CDA output cache enabled?, tag-based eviction, vary-by headers | [04 - The Content Delivery API](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/04-the-content-delivery-api.md), [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/06-cache-busting-and-invalidation.md) |
-| Confused about *what* is cached (page vs block/element, read vs write model) | `IPublishedContent` vs `IContent`, element vs content, published cache hierarchy | [02 - The Published Object](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/02-the-published-object.md) |
-| Published content differs between servers | Server role, distributed cache messages, refresher path | [05 - Published Content Cache, AppCaches, and Load Balancing](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/05-published-cache-and-load-balancing.md), [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/06-cache-busting-and-invalidation.md) |
-| Custom cached data does not clear | Cache key, notification handler, refresher, distributed broadcast | [09 - Small Local Cache Example with Tags](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/09-small-local-cache-example-with-tags.md), [06 - Cache Busting and Invalidation](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/06-cache-busting-and-invalidation.md) |
-| Media or blobs appear stale | Storage provider, CDN/browser headers, media URL/versioning | [10 - Storage Providers and Media Caching](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/10-storage-providers-and-media-caching.md) |
-| Search results are stale or wrong | Index state, Examine/Umbraco Search provider, reindex path | [13 - Examine, Indexes, and Cache-Adjacent Querying](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/13-examine-indexes-and-cache-adjacent-querying.md) |
-| A cache issue appears after upgrade | Version, legacy NuCache naming, changed Hybrid Cache behaviour | [12 - NuCache vs Hybrid Cache](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/12-nucache-vs-hybrid-cache.md), [15 - Reading the Cache Code](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/15-reading-the-cache-code.md) |
-| Warm-up, seeding, or rebuild is slow | Cache settings, seeding strategy, traversal cost | [08 - Cache Settings, Talks, and Field Notes](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/08-cache-settings-talks-and-field-notes.md), [11 - Future Hybrid Cache Architecture](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/11-future-hybrid-cache-architecture.md) |
+| Page shows old HTML after publish | Response headers, output-cache tags, content-change eviction | [03 - Website Output Caching](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/03-website-output-caching.md) |
+| Headless JSON (Content Delivery API) is stale or not invalidating after publish | CDA output cache enabled?, tag-based eviction, vary-by headers | [04 - The Content Delivery API](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/04-the-content-delivery-api.md) |
+| Confused about *what* is cached (page vs block/element, read vs write model) | `IPublishedContent` vs `IContent`, element vs content, published cache hierarchy | [02 - The Published Object](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/02-the-published-object.md) |
+| Published content differs between servers | Server role, distributed cache messages, refresher path | [05 - Published Content Cache, AppCaches, and Load Balancing](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/05-published-content-cache-appcaches-load-balancing.md) |
+| Custom cached data does not clear | Cache key, notification handler, refresher, distributed broadcast | [09 - Small Local Cache Example with Tags](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/09-small-local-cache-example-with-tags.md) |
+| Media or blobs appear stale | Storage provider, CDN/browser headers, media URL/versioning | [10 - Storage Providers and Media Caching](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/10-storage-providers-and-media-caching.md) |
+| Search results are stale or wrong | Index state, Examine/Umbraco Search provider, reindex path | [13 - Examine, Indexes, and Cache-Adjacent Querying](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/13-examine-indexes-and-cache-adjacent-querying.md) |
+| A cache issue appears after upgrade | Version, legacy NuCache naming, changed Hybrid Cache behaviour | [12 - NuCache vs Hybrid Cache](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/12-nucache-vs-hybrid-cache.md) |
+| Warm-up, seeding, or rebuild is slow | Cache settings, seeding strategy, traversal cost | [08 - Cache Settings, Talks, and Field Notes](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/08-cache-settings-talks-and-field-notes.md) |
 
 ## Answer Shape
 
@@ -138,7 +144,7 @@ If the answer says only "clear the cache", ask which cache and why that clear op
 
 ## Keep the Cache Layers Separate
 
-First be clear about *what* is cached: the read model `IPublishedContent` (documents, media, members) and its base `IPublishedElement` (blocks) — not the write model `IContent`. See [02 - The Published Object](https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/02-the-published-object.md). From Umbraco 18, elements get their own cache and cache-busting distinct from documents.
+First be clear about *what* is cached: the read model `IPublishedContent` (documents, media, members) and its base `IPublishedElement` (blocks) — not the write model `IContent`. See [02 - The Published Object](https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/02-the-published-object.md).
 
 Then do not let an answer blur these layers together:
 
@@ -180,7 +186,7 @@ Important source hubs:
 - Umbraco Storage Providers source: <https://github.com/umbraco/Umbraco.StorageProviders>
 - Umbraco Search source: <https://github.com/umbraco/Umbraco.Cms.Search>
 - Microsoft HybridCache docs: <https://learn.microsoft.com/en-us/aspnet/core/performance/caching/hybrid>
-- Book source appendix: <https://github.com/tedlindholm/umbraco-cache-for-intelligent-dummies/blob/main/book/16-appendix-sources.md>
+- Book source appendix: <https://github.com/tedlindholm/Umbraco-Cache-for-Intelligent-Dummies/blob/main/book/16-appendix-sources.md>
 
 When possible, prefer a direct docs or GitHub source link over a vague phrase such as "the docs say".
 
