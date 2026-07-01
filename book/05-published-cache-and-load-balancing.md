@@ -147,7 +147,7 @@ That does not always mean "add another cache".
 
 Sometimes it means "use an index instead of traversal", which is exactly where Examine fits. See [11 - Examine, Indexes, and Cache-Adjacent Querying](./13-examine-indexes-and-cache-adjacent-querying.md) for the full comparison.
 
-![A single container.Children().Where(...) call resolves child keys, loads child content one by one, resolves references like author/category/image, and does another cache lookup per reference — so one call in the code can mean N cache round trips and possible L2 or database work at runtime.](./assets/flow-traversal-cost.svg)
+![Diagram showing that cost moved from startup and memory to request-time traversal work, where one container.Children().Where(...) call can fan out into child loads, reference resolution, and extra cache or database lookups.](./assets/diagram-published-cache-and-load-balancing-05.svg)
 
 ## Invalidation after content changes
 
@@ -238,7 +238,7 @@ The HybridCache presentation material gives a useful warning for beginners:
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">
 
-![Quadrant chart comparing where cache cost moved, including old all-in-memory startup, seeded hot content, cold traversal with references, and single content lookup](./assets/diagram-published-cache-and-load-balancing-04.svg)
+![Diagram showing that cost moved from startup and memory to request-time traversal work, where one container.Children().Where(...) call can fan out into child loads, reference resolution, and extra cache or database lookups.](./assets/diagram-published-cache-and-load-balancing-05.svg)
 
 </div>
 
