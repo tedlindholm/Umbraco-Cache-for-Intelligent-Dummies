@@ -452,6 +452,14 @@ Practical takeaway:
 - v17 sometimes has to invalidate broadly around element changes
 - v18 is clearly moving towards more direct element-aware invalidation
 
+## On the roadmap: reusable Elements and cross-page invalidation (v19)
+
+If v18 makes element invalidation more precise *within* a page, the roadmap's **Elements** work reshapes what "an element changed" even means. The planned feature lets editors reuse the same element content across many pages — Elements gain their own section and tree, with declared "support for variants, versions, and caching" — and lets blocks be converted between local and shared content in the Block List and Block Grid editors.[^04-v19-elements]
+
+That turns element invalidation from a within-page concern into a cross-page one. Today a block edited on one page busts caches for that page. A shared, reusable element edited once must invalidate the element cache and evict the output cache of *every* page that embeds it — the same fan-out the refresher pipeline already performs for a branch of documents ([`RefreshBranch`](#refreshbranch) plus dependency-aware output eviction), now applied to a shared element that has many parents rather than one.
+
+> **Version note.** This is public-roadmap material, not released behaviour. It is targeted at the Umbraco 18+/19 timeframe, and `main` currently targets `18.1.0-rc`. The element-cache services this builds on (`ElementCacheService`, `ElementCacheRefresherNotification`, `WebsiteElementOutputCacheEvictionHandler`) are the v18 foundation named above; treat the reuse-and-caching specifics as subject to change until it ships.
+
 ## Publish vs Deploy vs output-cache eviction
 
 These three busting paths share one spine — the cache-refresher notification — but they are triggered and shaped differently. It helps to see them side by side.
@@ -518,3 +526,4 @@ Umbraco caching works because it is aggressive about invalidation *choreography*
 [^04-kjac-edge]: See [F10 in the appendix](./17-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes). These repositories are community and package field examples, not primary Umbraco CMS implementation sources.
 [^04-cda-multiserver]: See [C7](./17-appendix-sources.md#c7-core-cache-types-and-refreshers), [C12](./17-appendix-sources.md#c12-distributedcache-implementation-path-v17), and [C15](./17-appendix-sources.md#c15-content-delivery-api-output-cache-implementation) for the Umbraco-side refresher and CDA output-cache pieces; see [F10](./17-appendix-sources.md#f10-kenn-jacobsen-umbraco-repository-field-notes) for downstream Delivery API/headless field examples.
 [^04-custom-refresher]: See [C7](./17-appendix-sources.md#c7-core-cache-types-and-refreshers), [C11](./17-appendix-sources.md#c11-icacherefresher-interface-path-v17), and [C12](./17-appendix-sources.md#c12-distributedcache-implementation-path-v17).
+[^04-v19-elements]: Umbraco public product roadmap, "Elements" (targeted at Umbraco 18+, Q2 2026) and "Elements in Block Editor": [umbraco.com/products/knowledge-center/roadmap](https://umbraco.com/products/knowledge-center/roadmap/). Roadmap material describing planned direction, not released implementation.

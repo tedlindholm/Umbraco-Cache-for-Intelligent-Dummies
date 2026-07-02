@@ -32,13 +32,27 @@ So this chapter is really about choosing the right tool:
 - `RuntimeCache` for your own small computed results
 - `Examine` for index-shaped query problems
 
-The UMB.FYI archive is useful supporting evidence for how this distinction has been moving in the community conversation. Its cache and search entries point to four related trends: the v15+ shift away from loading all published content into memory at boot, the HybridCache warning that broad traversal now has a more visible cost, the arrival of `Umbraco.Cms.Search` as a search abstraction, and Umbraco 19's planned replacement of core Examine search handling with Umbraco Search.[^13-umbfyi]
+The UMB.FYI archive is useful supporting evidence for how this distinction has been moving in the community conversation. Its cache and search entries point to four related trends: the v15+ shift away from loading all published content into memory at boot, the HybridCache warning that broad traversal now has a more visible cost, the arrival of `Umbraco.Cms.Search` as a search abstraction, and Umbraco 19's announced replacement of core Examine search handling with Umbraco Search.[^13-umbfyi]
 
 That does not make Examine irrelevant. It makes the vocabulary more precise:
 
 - `Examine` remains an important index technology and provider.
 - `Umbraco Search` is the newer abstraction around search behaviour.
 - search providers and indexes solve discovery-shaped problems, not general-purpose caching problems.
+
+## Looking ahead: Umbraco Search replaces Examine in v19
+
+This vocabulary shift becomes a hard change in Umbraco 19. Umbraco has announced — as a formal breaking change — that **Umbraco Search will ship in Umbraco 19 and replace all existing Examine search handling, including the existing core search indexes**.[^13-v19-search] In practice:
+
+- the core indexes (`ExternalIndex`, `InternalIndex`, and the rest) are removed
+- direct `IExamineManager` use for search queries is no longer the recommended path — you query through the Umbraco Search abstraction instead
+- **Examine does not disappear.** It still ships as the *default* search provider underneath Umbraco Search, so `IExamineManager` keeps working as long as you do not swap the provider
+
+You can adopt it early: Umbraco Search is available as an add-on for Umbraco 17 and 18 and can coexist with existing Examine implementations, which makes the v19 jump a migration rather than a cliff.[^13-v19-search]
+
+> **Version note.** At the time of writing this is an announced change, not released behaviour — `main` targets `18.1.0-rc` and v19 is not yet in a release branch. Treat the specifics as subject to change until the release ships.
+
+**Why a caching book cares.** The index-versus-cache line drawn in this chapter does not move: a search index still solves discovery, not remembering. What changes is *where the index lives and how it stays fresh*. Under the abstraction you can point "search" at an external provider — Elasticsearch, Typesense, Algolia, or PostgreSQL — and when you do, the index leaves the Umbraco process entirely. It then has its own freshness lifecycle, driven by indexing notifications and reindexing, completely separate from the published-content cache and its refresher pipeline. That is the same separation this book keeps drawing: the thing that *finds* content and the thing that *remembers* published content are different systems with different invalidation stories, and v19 makes that separation explicit at the API surface. The failure mode to watch after upgrading is the familiar one — a search result that looks "stale" is almost always an index-freshness problem (reindex, indexing notifications, provider sync), not a cache-busting problem.
 
 ## The shortest possible distinction
 
@@ -386,3 +400,4 @@ If you want one clean sentence to reuse elsewhere, this is probably it:
 [^13-shazwazza-frontend]: See [F12](./17-appendix-sources.md#f12-shannon-deminick-examine-field-notes), "Can I disable Examine indexes on Umbraco front-end servers?".
 [^13-shazwazza-ipcq]: See [F12](./17-appendix-sources.md#f12-shannon-deminick-examine-field-notes), "Searching with IPublishedContentQuery in Umbraco".
 [^13-shazwazza-examinex]: See [F12](./17-appendix-sources.md#f12-shannon-deminick-examine-field-notes), "Configuring a Suggester with ExamineX and Azure AI Search".
+[^13-v19-search]: "[Breaking change]: Umbraco Search replaces existing search in Umbraco 19", [Umbraco Announcements issue 36](https://github.com/umbraco/Announcements/issues/36), 26 June 2026 (primary source; surfaced via UMB.FYI). See [F8](./17-appendix-sources.md#f8-umbfyi-cache-and-search-archive-trail), the 1 July 2026 entry.

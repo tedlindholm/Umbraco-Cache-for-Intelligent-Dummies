@@ -543,8 +543,8 @@ Main archive:
 Most relevant cache and index entries:
 
 - [2026-07-01 - Umbraco Search replaces existing search in Umbraco 19](https://umb.fyi/2026-07-01)
-  - Points to [Umbraco announcement issue 36](https://github.com/umbraco/Announcements/issues/36)
-  - Useful for future-facing wording: Umbraco Search is planned to replace existing Examine search handling and core indexes in Umbraco 19, while existing Examine implementations can still coexist during the transition.
+  - Surfaces the primary source: [Umbraco Announcements issue 36](https://github.com/umbraco/Announcements/issues/36), "[Breaking change]: Umbraco Search replaces existing search in Umbraco 19", posted 26 June 2026. Treat the GitHub announcement as the primary source and umb.fyi as the discovery pointer.
+  - Confirmed by the announcement: Umbraco Search ships in Umbraco 19 and "replaces all existing Examine search handling, including the existing core search indexes". Core indexes such as `ExternalIndex` and `InternalIndex` are removed, and direct `IExamineManager` use for search queries is no longer recommended. Examine still ships as the default search provider under Umbraco Search, so `IExamineManager` keeps working as long as the provider is not swapped. Umbraco Search is available as an add-on for Umbraco 17 and 18 and can coexist with existing Examine implementations during the transition, enabling faceted search, filtering, and alternative providers (Elasticsearch, Typesense, Algolia, PostgreSQL).
 - [2026-06-10 - CodeGarden-talk: Hybrid Cache changes everything](https://umb.fyi/2026-06-10)
   - Points to [Hybrid Cache Changes Everything - Enkelmedia blog](https://www.enkelmedia.se/blogg/2026/6/7/codegarden-talk-hybrid-cache-changes-everything)
   - Useful for the book's central warning that HybridCache improves memory/start-up characteristics but makes broad traversal and content-loading habits more visible.

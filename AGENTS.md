@@ -7,6 +7,7 @@ This repository is a working book project:
 - title: `Umbraco Cache for Intelligent Dummies`
 - primary focus: Umbraco 17
 - secondary focus: useful changes in 18 and the current `main` branch
+- forward-looking: announced or roadmap Umbraco 19 changes, always labelled as future and never presented as released behaviour (`main` currently targets `18.1.0-rc`)
 - core theme: cache busting and invalidation matter at least as much as cache creation
 
 The goal is not just to collect notes.

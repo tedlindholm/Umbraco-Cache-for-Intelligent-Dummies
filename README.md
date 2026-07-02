@@ -74,6 +74,7 @@ separate from cache invalidation.
 
 - Primary focus: Umbraco 17.5.1 code and Umbraco 17.latest documentation.
 - Secondary focus: useful and relevant changes observed in Umbraco 18.0.2 and `main`.
+- Forward-looking: Umbraco 19 changes that are announced or on the public roadmap, always labelled as such and kept separate from released behaviour. At the time of writing `main` targets `18.1.0-rc`, so v19 is not yet in a release branch.
 - Canonical source register: [17 - Appendix: Sources](./book/17-appendix-sources.md).
 
 ## Chapters
