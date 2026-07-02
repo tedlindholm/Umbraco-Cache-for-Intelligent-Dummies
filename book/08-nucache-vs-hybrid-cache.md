@@ -156,6 +156,8 @@ That is useful for the book because it explains why readers may see:
 
 all in the same codebase and wonder what is going on.
 
+<div style="page-break-before: always; break-before: page;"></div>
+
 ## The best mental model
 
 <div class="pdf-keep-together" style="break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; margin: 1rem 0;">

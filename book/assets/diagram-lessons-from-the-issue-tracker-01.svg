@@ -19,19 +19,19 @@
 <path d="M78,211 H698" stroke="#dde1f2" stroke-width="1"/>
 <path d="M78,148.5 H698" stroke="#dde1f2" stroke-width="1"/>
 <path d="M78,86 H698" stroke="#dde1f2" stroke-width="1"/>
-<rect x="104.03999999999999" y="323.5" width="71.92" height="12.5" rx="8" fill="url(#lineGrad)" filter="url(#soft)"/>
-<text x="140" y="311.5" text-anchor="middle" font-size="12" font-weight="700" fill="#667eea">5</text>
+<rect x="104.03999999999999" y="86" width="71.92" height="250" rx="8" fill="url(#lineGrad)" filter="url(#soft)"/>
+<text x="140" y="74" text-anchor="middle" font-size="12" font-weight="700" fill="#667eea">5</text>
 <text x="140" y="371" text-anchor="middle" font-size="11" font-weight="400" fill="#6b708c">URL/routing</text>
-<rect x="228.04" y="328.5" width="71.92" height="7.5" rx="8" fill="url(#lineGrad)" filter="url(#soft)"/>
-<text x="264" y="316.5" text-anchor="middle" font-size="12" font-weight="700" fill="#667eea">3</text>
+<rect x="228.04" y="186" width="71.92" height="150" rx="8" fill="url(#lineGrad)" filter="url(#soft)"/>
+<text x="264" y="174" text-anchor="middle" font-size="12" font-weight="700" fill="#667eea">3</text>
 <text x="264" y="371" text-anchor="middle" font-size="11" font-weight="400" fill="#6b708c">Cold start/migration</text>
-<rect x="352.04" y="326" width="71.92" height="10" rx="8" fill="url(#lineGrad)" filter="url(#soft)"/>
-<text x="388" y="314" text-anchor="middle" font-size="12" font-weight="700" fill="#667eea">4</text>
+<rect x="352.04" y="136" width="71.92" height="200" rx="8" fill="url(#lineGrad)" filter="url(#soft)"/>
+<text x="388" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#667eea">4</text>
 <text x="388" y="371" text-anchor="middle" font-size="11" font-weight="400" fill="#6b708c">Distributed invalidation</text>
-<rect x="476.04" y="326" width="71.92" height="10" rx="8" fill="url(#lineGrad)" filter="url(#soft)"/>
-<text x="512" y="314" text-anchor="middle" font-size="12" font-weight="700" fill="#667eea">4</text>
+<rect x="476.04" y="136" width="71.92" height="200" rx="8" fill="url(#lineGrad)" filter="url(#soft)"/>
+<text x="512" y="124" text-anchor="middle" font-size="12" font-weight="700" fill="#667eea">4</text>
 <text x="512" y="371" text-anchor="middle" font-size="11" font-weight="400" fill="#6b708c">HybridCache internals</text>
-<rect x="600.04" y="331" width="71.92" height="5" rx="8" fill="url(#lineGrad)" filter="url(#soft)"/>
-<text x="636" y="319" text-anchor="middle" font-size="12" font-weight="700" fill="#667eea">2</text>
+<rect x="600.04" y="236" width="71.92" height="100" rx="8" fill="url(#lineGrad)" filter="url(#soft)"/>
+<text x="636" y="224" text-anchor="middle" font-size="12" font-weight="700" fill="#667eea">2</text>
 <text x="636" y="371" text-anchor="middle" font-size="11" font-weight="400" fill="#6b708c">Historical NuCache</text>
 </svg>

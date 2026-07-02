@@ -192,6 +192,8 @@ These flags map directly onto Umbraco concerns. A background warm-up that should
 
 > **Gotcha — stampede protection is per process, not per cluster.** The coalescing above happens inside one server's L1. There is no built-in distributed lock in the initial `HybridCache` releases, so on a load-balanced farm each node can still run the factory once for the same key. For Umbraco that is usually fine — the factory reads the prepared database cache source, not the full content graph — but do not assume "stampede protection" means "exactly one fetch across the whole cluster."
 
+<div style="page-break-before: always; break-before: page;"></div>
+
 ## Tag invalidation is logical, not physical
 
 This is the single most important Microsoft detail for understanding Umbraco's tag-based busting — and the easiest to get wrong. `RemoveByTagAsync` does **not** walk the cache and delete entries. Neither `IMemoryCache` nor `IDistributedCache` even understands tags. Instead, invalidation records an *"ignore anything created before this moment"* rule for that tag:[^10-mstags]
@@ -209,6 +211,8 @@ This is the single most important Microsoft detail for understanding Umbraco's t
 > **Gotcha — tag busting does not free memory.** Because invalidation is a logical timestamp gate, calling `RemoveByTagAsync` on a huge content type does not immediately reclaim RAM; the stale entries linger until their own expiry. If you are chasing memory, tag invalidation is the wrong lever — expiry and payload size are the right ones.
 
 This is precisely why Umbraco can afford to tag *every* document and element and still invalidate a whole content type in one call: the operation is cheap because it is a timestamp bump, not a sweep.
+
+<div style="page-break-before: always; break-before: page;"></div>
 
 ## Limits: payload and key size
 
@@ -529,6 +533,8 @@ This is not just another generic cache layer; it is a very deliberate optimisati
 
 > **Key term — L0 converted-object cache.** Every other layer stores content *serialised*, which means it must be deserialised and turned into a live `IPublishedContent` before your template can use it. L0 skips that work entirely by holding the finished objects in memory. It is the closest, cheapest hit in the whole pipeline — and the first thing every request tries.
 
+<div style="page-break-before: always; break-before: page;"></div>
+
 ## Request flow for a document
 
 The document lookup path is roughly:
@@ -608,6 +614,8 @@ The key idea is simple:
 
 - not everything needs to start hot
 - but some things should start hot on purpose
+
+<div style="page-break-before: always; break-before: page;"></div>
 
 ## Seeding flow
 

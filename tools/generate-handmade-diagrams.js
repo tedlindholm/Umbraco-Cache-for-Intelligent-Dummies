@@ -507,7 +507,7 @@ function xySvg(block) {
   const chartY = 86;
   const chartW = 620;
   const chartH = 250;
-  const max = Math.max(100, ...bars);
+  const max = Math.max(1, ...bars);
   const barW = chartW / Math.max(bars.length, 1) * 0.58;
   const parts = [
     textBlock(width / 2, 42, [title], { size: 18, weight: '700' }),

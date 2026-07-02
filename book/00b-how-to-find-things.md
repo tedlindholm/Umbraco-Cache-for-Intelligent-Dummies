@@ -51,6 +51,8 @@ If you already know *which* cache you are in, this table tells you what it holds
 
 ---
 
+<div style="page-break-before: always; break-before: page;"></div>
+
 ## 3. Which cache am I looking at?
 
 When the symptom alone is not enough, walk this diagram. It sorts on one question at a time and never mixes layers.
